@@ -45,3 +45,7 @@ il y aura differents sons pour chaque actions.
 Oui, il y aura meme differentes animations en fonctions des pions. Certains auront des mouvement rapides, tandis que d'autres auront des mouvements plus lents == plus d'emotions
 
 
+Planning :
+- 
+
+
