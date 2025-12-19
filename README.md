@@ -1,6 +1,8 @@
 # Echecs---python
 Nous souhaitons créer un jeu d'échecs en 2D avec des animations dans le jeu d'échecs et dans la prise entre les pièces (par exemple lorsqu'une pièce mange une autre pièce il y aura une animation).
 
+-Quel système de contrôl ?
+le pointeur souris
 
 - Ya-t-il une confirmation de déplacement?
 Non il n'y aura pas de confirmation de déplacement pour faciliter le déroulement de la partie.
@@ -21,7 +23,7 @@ Oui, la pièce suera et si c'est le Roi et qu'il n'y a pas de moyen d'echapper �
 Non, il n'y aura pas de possibilité de rejouer.
 
 - Est ce que le jeu autorise l'annulation d'un coup?
-non, impossible de revenir en arriere pour ne pas compliqueer la partie. Un message de confirmation est envoyé pour valider le coup souhaité avant le tour de l'autre joueur.
+non, impossible de revenir en arriere pour ne pas compliquer la partie.
 
 - En combien de dimensions sera le jeux ?
 Le jeu sera en 2D.
