@@ -2,13 +2,15 @@ import pygame
 pygame.init()
 
 pygame.display.set_caption("Jeu d'échecs") # Créer la fenêtre et lui donner un nom
-pygame.display.set_mode((900,900)) # Donner les dimensions de la fenêtre
 
 encours = True
-fondecran =
+background = pygame.image.load("fondecran.jpg")
+screen = pygame.display.set_mode((1280,720))
+screen.blit(background, (0, 0))
 
 while encours :
+    pygame.display.flip()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             encours = False
-            pygame.quit()
+pygame.quit()
