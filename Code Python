@@ -6,9 +6,4 @@ pygame.display.set_mode((600,600)) # Donner les dimensions de la fenêtre
 
 en_cours = True
 
-def drawboard():
-    for ligne in range(8):
-         for colone in range(8):
-
- 
 while 
