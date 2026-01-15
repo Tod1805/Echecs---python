@@ -16,7 +16,7 @@ texte_accueil1 = police.render("Bienvenue sur notre jeu d'échecs", True, (255, 
 texte_accueil2 = police.render("Appuyez sur ESPACE pour jouer", True, (255, 255, 255))
 texte_revenir_accueil = police.render("Appuyez sur ENTREE pour revenir à l'accueil", True, (255, 255, 255))
 texte_quitter1 = police.render("Appuyer sur Q pour quitter le jeu", True, (255, 255, 255))
-texte_quitter2 = police.render("Appuyer sur S pour vraiment le jeu", True, (255, 255, 255))
+texte_quitter2 = police.render("Appuyer sur S pour vraiment quitter", True, (255, 255, 255))
 screen.blit(texte_accueil1, (150, 40))
 screen.blit(texte_accueil2, (150, 400))
 
@@ -34,6 +34,7 @@ while encours :
                 screen.blit(menu, (0, 0))
                 screen.blit(game_over, (220, 200))
                 screen.blit(texte_revenir_accueil, (20, 20))
+                screen.blit(texte_quitter2, (90, 100))
             if event.key == pygame.K_RETURN:
                 screen.blit(menu, (0, 0))
                 screen.blit(texte_accueil1, (150, 40))
