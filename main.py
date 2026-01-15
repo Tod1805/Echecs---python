@@ -1,4 +1,5 @@
 import pygame
+
 # from pygame.locals import *
 pygame.init()
 
@@ -11,7 +12,8 @@ game_over = pygame.image.load("ecranfingameover.jpg")
 screen = pygame.display.set_mode((900,900))
 screen.blit(menu, (0, 0))
 
-# pionblanc = pygame.image.load("pionblanc.png").convert_alpha()
+pionblanc = pygame.image.load("pionblanc.png").convert_alpha()
+# PB = pionblanc.resize((50, 50))
 
 police = pygame.font.SysFont("Arial", 40, bold=True)
 texte_accueil1 = police.render("Bienvenue sur notre jeu d'échecs", True, (255, 255, 255))
@@ -21,7 +23,8 @@ texte_quitter1 = police.render("Appuyer sur Q pour quitter le jeu", True, (255, 
 texte_quitter2 = police.render("Appuyer sur S pour vraiment quitter", True, (255, 255, 255))
 screen.blit(texte_accueil1, (150, 40))
 screen.blit(texte_accueil2, (150, 400))
-
+x = 340
+y = 480
 
 while encours :
     pygame.display.flip()
@@ -33,7 +36,7 @@ while encours :
                 screen.blit(menu, (0, 0))
                 screen.blit(echiquier, ((140, 150)))
                 screen.blit(texte_quitter1, (130, 50))
-                # screen.blit(pionblanc, (340,480))
+                screen.blit(pionblanc, (x,y))
             if event.key == pygame.K_q:
                 screen.blit(menu, (0, 0))
                 screen.blit(game_over, (220, 200))
@@ -45,5 +48,13 @@ while encours :
                 screen.blit(texte_accueil2, (150, 400))
             if event.key == pygame.K_s:
                 encours = False
+            #if event.key == pygame.K_LEFT:
+            #    y = y - 90
+            #if event.key == pygame.K_RIGHT:
+             #   y = y - 90
+            #if event.key == pygame.K_LEFT:
+             #   y = y - 90
+            #if event.key == pygame.K_LEFT:
+             #   y = y - 90
 
 pygame.quit()
