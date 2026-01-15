@@ -11,6 +11,8 @@ game_over = pygame.image.load("ecranfingameover.jpg")
 screen = pygame.display.set_mode((900,900))
 screen.blit(menu, (0, 0))
 
+# pionblanc = pygame.image.load("pionblanc.png").convert_alpha()
+
 police = pygame.font.SysFont("Arial", 40, bold=True)
 texte_accueil1 = police.render("Bienvenue sur notre jeu d'échecs", True, (255, 255, 255))
 texte_accueil2 = police.render("Appuyez sur ESPACE pour jouer", True, (255, 255, 255))
@@ -30,6 +32,8 @@ while encours :
             if event.key == pygame.K_SPACE:
                 screen.blit(menu, (0, 0))
                 screen.blit(echiquier, ((140, 150)))
+                screen.blit(texte_quitter1, (130, 50))
+                # screen.blit(pionblanc, (340,480))
             if event.key == pygame.K_q:
                 screen.blit(menu, (0, 0))
                 screen.blit(game_over, (220, 200))
