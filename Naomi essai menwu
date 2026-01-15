@@ -1,0 +1,57 @@
+#Couleurs
+WHITE = (255, 255, 255)
+TRANSLUCIDE_BLUE = (0,80,200,180)
+HOVER_BLUE = (0, 140,255,220)
+SHADOW = (0,0,0)
+
+class Button:
+    def_init_(setf,text,center_y,action:):
+        self.text = text
+        self.action = action
+        self.center_y = center_y
+        self.widht, self.height = 320, 70
+        self.rect = pygame.Rect((0,0,self.widht,self.height))
+        self.rect.center = (WIDTH//2,center_y)
+
+    def draw(self, win, mouse_pos):
+        is_hovered = self.rect.coliidepoint(mouse_pos)
+        color = HOVER_BLUE if is_hover else TRANSLUCIDE
+        button_surface = pygame.Surface((self.width,self.height), pygame.SRCALPHA)
+        pygame.draw.rect(button_surface, color, (0,0,self.width,self.height), border_radius=16)
+        win.blint(button_surface, self.rect)
+
+        text_surf = FONT_BUTTON.render(self.text, True, WHITE)
+        text_rect = text_surf.get_rect(center = self.rect.center)
+
+        shadow = FONT_BUTTON.render(self.text, True, SHADOW)
+        win.blit(shadow, (text_rect.x+2, text_rect.y+20))
+        win.blit(text_surf,text_rect)
+
+    def is-clicked(self, mouse_pos, mous-pressed):
+        return self.rect.collidepoint(mouse_pos) and mouse_pressed[0]
+
+
+    #Listes des boutons
+
+    buttons = [
+        Button("Nouvelle Partie",320,"new"),
+        Button("Charger Partie",400,"load"),
+        Button("Option",320,"option"),
+        Button("Quitter",320,"quit"),
+
+    ]
+
+    runnig = True 
+    clock = pygame.time.Clock()
+
+    while running:
+        clock.tick(60)
+        screen.blit(background, (0,0))
+
+        mouse_pos = pygame.mous.get_pos()
+        mouse_pressed = pygame.mouse.get_pressed()
+
+        title = FONT_TITLE.render("Mon jeux", True, WHYTE)
+        shadow = FONT-TITLE.render("Mon jeux", True, SHADOW)
+        screnn.blit(shadow, (WIDTH//2 - title.get_width()//2+3, 103))
+        screnn.blit(title, (WIDTH//2 - title.get_width()//2, 100))
