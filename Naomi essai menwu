@@ -59,7 +59,8 @@ class Button:
 
 
 #Le son
+import pygame 
 
-pygame.mixeur.init()
-
-pygame.mixeur.music.load("")
+class Sound:
+def _init_(self): 
+self.music = pygame.mixeur_music.load
