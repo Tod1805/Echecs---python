@@ -55,3 +55,11 @@ class Button:
         shadow = FONT-TITLE.render("Mon jeux", True, SHADOW)
         screnn.blit(shadow, (WIDTH//2 - title.get_width()//2+3, 103))
         screnn.blit(title, (WIDTH//2 - title.get_width()//2, 100))
+
+
+
+#Le son
+
+pygame.mixeur.init()
+
+pygame.mixeur.music.load("")
