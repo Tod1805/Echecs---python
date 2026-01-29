@@ -1,19 +1,22 @@
+from os import sys
 import pygame
+from Sound import soundb
+from Sound import soundm
 
-# from pygame.locals import *
+from pygame.locals import *
 pygame.init()
 
 pygame.display.set_caption("Jeu d'échecs")
 
 encours = True
-menu = pygame.image.load("ecrannoir.png")
-echiquier = pygame.image.load("echiquier.jpg")
-game_over = pygame.image.load("ecranfingameover.jpg")
+menu = pygame.image.load("images\ecrannoir.png")
+echiquier = pygame.image.load("images\echiquier.jpg")
+game_over = pygame.image.load("images\ecranfingameover.jpg")
 screen = pygame.display.set_mode((900,900))
 screen.blit(menu, (0, 0))
 
-pionblanc = pygame.image.load("pionblanc.png").convert_alpha()
-# PB = pionblanc.resize((50, 50))
+pionblanc = pygame.image.load("images\pionblanc.png").convert_alpha()
+PB = pygame.transform.scale(pionblanc, (60, 60))
 
 police = pygame.font.SysFont("Arial", 40, bold=True)
 texte_accueil1 = police.render("Bienvenue sur notre jeu d'échecs", True, (255, 255, 255))
@@ -36,7 +39,8 @@ while encours :
                 screen.blit(menu, (0, 0))
                 screen.blit(echiquier, ((140, 150)))
                 screen.blit(texte_quitter1, (130, 50))
-                screen.blit(pionblanc, (x,y))
+                screen.blit(PB, (x,y))
+                soundb()
             if event.key == pygame.K_q:
                 screen.blit(menu, (0, 0))
                 screen.blit(game_over, (220, 200))
@@ -48,14 +52,16 @@ while encours :
                 screen.blit(texte_accueil2, (150, 400))
             if event.key == pygame.K_s:
                 encours = False
-            #if event.key == pygame.K_LEFT:
-            #    y = y - 90
-            #if event.key == pygame.K_RIGHT:
-             #   y = y - 90
-            #if event.key == pygame.K_LEFT:
-             #   y = y - 90
-            #if event.key == pygame.K_LEFT:
-             #   y = y - 90
+            if event.key == pygame.K_LEFT:
+                y = y - 90
+            if event.key == pygame.K_RIGHT:
+                y = y - 90
+            if event.key == K_z:
+                y+=90
+            screen.blit(echiquier, ((140, 150)))
+            soundm()
+            screen.blit(PB, (x,y))
+        pygame.display.flip()
 
 pygame.quit()
-
+sys.exit()
