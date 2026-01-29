@@ -1,7 +1,7 @@
 from os import sys
 import pygame
-from Sound import soundb
-from Sound import soundm
+from sound import soundbackground
+from sound import soundeffect
 
 from pygame.locals import *
 pygame.init()
@@ -40,7 +40,7 @@ while encours :
                 screen.blit(echiquier, ((140, 150)))
                 screen.blit(texte_quitter1, (130, 50))
                 screen.blit(PB, (x,y))
-                soundb()
+                soundbackground()
             if event.key == pygame.K_q:
                 screen.blit(menu, (0, 0))
                 screen.blit(game_over, (220, 200))
@@ -55,11 +55,9 @@ while encours :
             if event.key == pygame.K_LEFT:
                 y = y - 90
             if event.key == pygame.K_RIGHT:
-                y = y - 90
-            if event.key == K_z:
-                y+=90
+                y = y + 90
             screen.blit(echiquier, ((140, 150)))
-            soundm()
+            soundeffect()
             screen.blit(PB, (x,y))
         pygame.display.flip()
 
