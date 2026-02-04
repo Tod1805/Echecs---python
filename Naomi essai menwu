@@ -37,13 +37,20 @@ position_blancs = [(0,0),(1,0),(2,0),(3,0)(4,0),(5,0),(6,0),(7,0),
                 (0,1),(1,1),(2,1),(3,1)(4,1),(5,1),(6,1),(7,1)] 
                 #position sur le plateau des pièces blanches
 
-noirs = ['tour','cavalier','fou','roi','reine','fou','cavaleier','tour'
-          'pion','pion','pion','pion','pion','pion','pion','pion']
+noirs = ['tournoir','cavalier_noir','fou_noir','roi_noir','reine_noir','fou_noir','cavaleier_noir','tour_noir'
+          'pionnoir','pion_noir','pion_noir','pion_noir','pion_noir','pion_noir','pion_noir','pion_noir']
 position_blancs = [(0,7),(1,7),(2,7),(3,7)(4,7),(5,7),(6,7),(7,7),
                 (0,6),(1,6),(2,6),(3,6)(4,6),(5,6),(6,6),(7,6)] 
                 #position sur le plateau des pièces noires
 blancs_capturés = []
 noirs_capturés = []
+etape_t = 0
+sélection = 100
+coup_valide = []
+#importation images des pièces
+reine_noir = pygame.image.load('//')
+reine_noir = pygame.transforma.scale(reine_noir, (80, 80))
+-
 """
 
 run = True
