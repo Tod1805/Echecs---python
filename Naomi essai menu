@@ -110,12 +110,12 @@ position_noirs = [
 
 blancs_captures = []
 noirs_captures = []
-etape = 0 
+turn_step = 0 
 selection = 100
-valid_moves = []
-# load in game piece image(reine, roi, tour, fou, cavalier,pawn) x2 pièces noires et blanches
+deplacements_valides = []
+# charger les images reine, roi, tour, fou, cavalier,pion x2 (pièces noires et blanches)
 
-dameblanche = pygame.image.load('U:\Downloads\Echecs---python-main\dameblanc.png')
+dameblanc = pygame.image.load('')
 dameblanc = pygame.image.scale(dameblanc,(80.80))
 
 run = True
