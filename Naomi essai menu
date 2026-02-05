@@ -115,6 +115,34 @@ selection = 100
 deplacements_valides = []
 # charger les images reine, roi, tour, fou, cavalier,pion x2 (pièces noires et blanches)
 
+pion_noir = pygame.image.load('Téléchargements/chess_project/pion_noir.png')
+pion_noir = pygame.image.scale(pion_noir,(80.80))
+pion_noir_capture = = pygame.transform.scale(pion_noir, (45,45))
+
+tour_noir = pygame.image.load('Téléchargements/chess_project/tour_noir.png')
+tour_noir = pygame.image.scale(tour_noir,(80.80))
+tour_noir_capture = = pygame.transform.scale(tour_noir, (45,45))
+
+cavalier_noir = pygame.image.load('Téléchargements/chess_project/cavalier_noir.png')
+cavalier_noir = pygame.image.scale(cavalier_noir,(80.80))
+cavalier_noir_capture = = pygame.transform.scale(cavalier_noir, (45,45))
+
+fou_noir = pygame.image.load('Téléchargements/chess_project/fou_noir.png')
+fou_noir = pygame.image.scale(fou_noir,(80.80))
+fou_noir_capture = = pygame.transform.scale(fou_noir, (45,45))
+
+reine_noir = pygame.image.load('Téléchargements/chess_project/reine_noir.png')
+reine_noir = pygame.image.scale(reine_noir,(80.80))
+reine_noir_capture = = pygame.transform.scale(reine_noir, (45,45))
+
+roi_noir = pygame.image.load('Téléchargements/chess_project/roi_noir.png')
+roi_noir = pygame.image.scale(roi_noir,(80.80))
+roi_noir_capture = = pygame.transform.scale(roi_noir, (45,45))
+
+dameblanc = pygame.image.load('Téléchargements/chess_project/dameblanc.png')
+dameblanc = pygame.image.scale(dameblanc,(80.80))
+dameblanc_capture = = pygame.transform.scale(dameblanc, (45,45))
+
 dameblanc = pygame.image.load('')
 dameblanc = pygame.image.scale(dameblanc,(80.80))
 
