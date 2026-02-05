@@ -96,10 +96,10 @@ position_blancs = [
 # positions des pièces blanches
 
 noirs = [
-    'tour', 'cavalier', 'fou', 'roi', 'reine',
-    'fou', 'cavalier', 'tour',
-    'pion', 'pion', 'pion', 'pion',
-    'pion', 'pion', 'pion', 'pion'
+    'tour_noir', 'cavalier_noir', 'fou_noir', 'roi_noir', 'reine_noir',
+    'fou_noir', 'cavalier_noir', 'tour_noir',
+    'pion_noir', 'pion_noir', 'pion_noir', 'pion_noir',
+    'pion_noir', 'pion_noir', 'pion_noir', 'pion_noir'
 ]
 
 position_noirs = [
@@ -110,10 +110,10 @@ position_noirs = [
 
 blancs_captures = []
 noirs_captures = []
-turn_step = 0 
+etape = 0 
 selection = 100
 valid_moves = []
-# load in game piece image(reine, roi, tour, fou, cavalier,pawn) x2
+# load in game piece image(reine, roi, tour, fou, cavalier,pawn) x2 pièces noires et blanches
 
 dameblanche = pygame.image.load('U:\Downloads\Echecs---python-main\dameblanc.png')
 dameblanc = pygame.image.scale(dameblanc,(80.80))
