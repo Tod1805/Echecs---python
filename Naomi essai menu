@@ -1,4 +1,3 @@
-
 #deux joueurs joue au echecs avec pygame
 #part one , set up variables images and game loop
 
@@ -56,7 +55,6 @@ while run:
 
     pygame.display.flip()
 
-pygame.quit()
 
 
 blancs = [
@@ -119,6 +117,3 @@ roi_noir_capture = pygame.transform.scale(roi_noir, (45,45))
 dameblanc = pygame.image.load('Téléchargements/chess_project/dameblanc.png')
 dameblanc = pygame.image.scale(dameblanc,(80.80))
 dameblanc_capture = pygame.transform.scale(dameblanc, (45,45))
-
-dameblanc = pygame.image.load('')
-dameblanc = pygame.image.scale(dameblanc,(80.80))
