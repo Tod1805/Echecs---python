@@ -9,10 +9,10 @@ pygame.init()
 WIDTH = 1000
 HEIGHT = 900
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
-pygame.display.set-caption("Jeu d'echecs")
+pygame.display.set_caption("Jeu d'echecs")
 
 
-font = pygame.font.Font('freesanbold.ttf', 20)
+font = pygame.font.Font('freesansbold.ttf', 20)
 big_font = pygame.font.Font('freesansbold.ttf', 50)
 timer = pygame.time.Clock()
 fps = 60
@@ -34,18 +34,6 @@ while run:
 
 
 # variables et images importées
-run = True
-while run:
-    timer.tick(fps)
-    screen.fill((250, 150, 150))
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-
-    pygame.display.flip()
-
-
 
 blancs = [
     'tourblanc', 'cavalierblanc', 'foublanc', 'roi', 'dame',
@@ -85,25 +73,25 @@ pion_noir = pygame.transform.scale(pion_noir,(80,80))
 pion_noir_capture = pygame.transform.scale(pion_noir, (45,45))
 
 tour_noir = pygame.image.load('Téléchargements/chess_project/tour_noir.png')
-tour_noir = pygame.pygame.transform.scale(tour_noir,(80,80))
+tour_noir = pygame.transform.scale(tour_noir,(80,80))
 tour_noir_capture = pygame.transform.scale(tour_noir, (45,45))
 
 cavalier_noir = pygame.image.load('Téléchargements/chess_project/cavalier_noir.png')
-cavalier_noir = pygame.pygame.transform.scale(cavalier_noir,(80,80))
+cavalier_noir = pygame.transform.scale(cavalier_noir,(80,80))
 cavalier_noir_capture = pygame.transform.scale(cavalier_noir, (45,45))
 
 fou_noir = pygame.image.load('Téléchargements/chess_project/fou_noir.png')
-fou_noir = pygame.pygame.transform.scale(fou_noir,(80,80))
+fou_noir = pygame.transform.scale(fou_noir,(80,80))
 fou_noir_capture = pygame.transform.scale(fou_noir, (45,45))
 
 reine_noir = pygame.image.load('Téléchargements/chess_project/reine_noir.png')
-reine_noir = pygame.pygame.transform.scale(reine_noir,(80,80))
+reine_noir = pygame.transform.scale(reine_noir,(80,80))
 reine_noir_capture = pygame.transform.scale(reine_noir, (45,45))
 
 roi_noir = pygame.image.load('Téléchargements/chess_project/roi_noir.png')
-roi_noir = pygame.pygame.transform.scale(roi_noir,(80,80))
+roi_noir = pygame.transform.scale(roi_noir,(80,80))
 roi_noir_capture = pygame.transform.scale(roi_noir, (45,45))
 
 dameblanc = pygame.image.load('Téléchargements/chess_project/dameblanc.png')
-dameblanc = pygame.pygame.transform.scale(dameblanc,(80,80))
+dameblanc = pygame.transform.scale(dameblanc,(80,80))
 dameblanc_capture = pygame.transform.scale(dameblanc, (45,45))
