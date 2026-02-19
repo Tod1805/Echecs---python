@@ -2,6 +2,7 @@ import sys                                                                      
 import pygame                                                                   #librairie principale pour le jeu
 from sound import soundbackground                                               #musique de fond
 from sound import soundeffect                                                   #effet sonore
+from sound import soundbackground_tod
 
 from pygame.locals import *                                                     # Constantes pygame (K_SPACE, QUIT, etc.)
 
@@ -21,14 +22,14 @@ class EtatDeJeu:
 
 pygame.init()                                                                   # demarre tous les modules pygame
 pygame.font.init()
-LARGEUR = HAUTEUR = 1000
+LARGEUR = HAUTEUR = 900
 fenetre = pygame.display.set_mode((LARGEUR,HAUTEUR))
 pygame.display.set_caption("Jeu d'échecs")                                      #Titre du jeu, titre de la fenetre
 
 ej = EtatDeJeu()
 encours = True                                                                  #controle de la boucle principal du jeu  
 
-soundbackground()                                                              # joue le son d'arrière plan défini dans sound.py
+soundbackground_tod()                                                              # joue le son d'arrière plan défini dans sound.py
 
 etat = "MENU"
 
