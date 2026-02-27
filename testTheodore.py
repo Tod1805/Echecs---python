@@ -6,6 +6,8 @@ from sound import soundbackground_tod
 
 from pygame.locals import *                                                     # Constantes pygame (K_SPACE, QUIT, etc.)
 
+
+
 class EtatDeJeu:
         def echiquier(self):
             self.plateau = [
@@ -22,21 +24,31 @@ class EtatDeJeu:
 
 pygame.init()                                                                   # demarre tous les modules pygame
 pygame.font.init()
-LARGEUR = HAUTEUR = 900
+LARGEUR = HAUTEUR = 800
 fenetre = pygame.display.set_mode((LARGEUR,HAUTEUR))
 pygame.display.set_caption("Jeu d'échecs")                                      #Titre du jeu, titre de la fenetre
 
 ej = EtatDeJeu()
-encours = True                                                                  #controle de la boucle principal du jeu  
-
-soundbackground_tod()                                                              # joue le son d'arrière plan défini dans sound.py
+encours = True                                                                  #controle de la boucle principal du jeu                                                              # joue le son d'arrière plan défini dans sound.py
 
 etat = "MENU"
 
-COULEUR_1 = (0, 0, 0)
-COULEUR_2 = (255, 255, 255)
+# Définition des polices
+police_titre = pygame.font.SysFont("Verdana", 35, bold=True)
+police_instruction = pygame.font.SysFont("Verdana", 25)
+police_petite = pygame.font.SysFont("Arial", 18, bold=True)
+
+# Couleurs
+BLANC = (255, 255, 255)
+GRIS_CLAIR = (200, 200, 200)
+
+NOIR = (0, 0, 0)
 
 taille_case = LARGEUR  // 8
+
+image_menu = pygame.image.load("images\wp.png")
+image_menu = pygame.transform.scale(image_menu, (400, 400))
+rect_image = image_menu.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 50))
 
 while encours :                                                                  
     for event in pygame.event.get():                                            #assiotiation  des evenements aux action ( clavier, souris, espace... )
@@ -46,24 +58,57 @@ while encours :
             if event.key == pygame.K_SPACE:
                 if etat == "MENU":
                     etat = "JEU"
-
-    
-    fenetre.fill((0,0,0))                                                      #met à jour l'ecran
-    
+                    soundbackground_tod()
+            if event.key == pygame.K_RETURN:
+                if etat == "JEU":
+                    etat = "MENU"
+                    pygame.mixer.stop()
+            if etat == "FIN":
+                if event.key == pygame.K_r:
+                    ej = EtatDeJeu()
+                    etat = "MENU"
+                if event.key == pygame.K_q:
+                    encours = False
+            if event.key == pygame.K_ESCAPE:
+                if etat == "JEU":
+                    etat = "FIN"
+                    pygame.mixer.fadeout(5000)                                    # Fondu de 3 secondes pour la musique de fond
     if etat == "MENU":
-        police = pygame.font.SysFont("Arial", 30, bold=True)
-        
-        texte_bienvenue = police.render("Bienvenue dans notre jeu d'échecs", True, (255, 255, 255))
-        texte_instruction = police.render("Appuyez sur ESPACE pour commencer", True, (200, 200, 200))
+        fenetre.fill((0,0,0))                                                     #met à jour l'ecran
+        texte_bienvenue = police_titre.render("Bienvenue dans notre jeu d'échecs", True, (255, 255, 255))
+        texte_instruction = police_instruction.render("Appuyez sur ESPACE pour jouer", True, (200, 200, 200))
 
-        fenetre.blit(texte_bienvenue, (LARGEUR//2 - 200, HAUTEUR//2 - 50))
-        fenetre.blit(texte_instruction, (LARGEUR//2 - 220, HAUTEUR//2 + 20))
+        rect_bienvenue = texte_bienvenue.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 250))
+        rect_instruction = texte_instruction.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 200))
+
+        fenetre.blit(image_menu, rect_image)
+        fenetre.blit(texte_bienvenue, rect_bienvenue)
+        fenetre.blit(texte_instruction, rect_instruction)
 
     elif etat == "JEU":
         for ligne in range(8):
             for colonne in range (8):
-                couleur = COULEUR_1 if (ligne + colonne) % 2 == 0 else COULEUR_2
+                couleur = NOIR if (ligne + colonne) % 2 == 0 else BLANC
                 pygame.draw.rect(fenetre, couleur, pygame.Rect(colonne * taille_case, ligne * taille_case, taille_case, taille_case))
-        pygame.display.flip()
+        message = "ESC : Quitter | ENTREE : Menu"
+        texte_message = police_petite.render(message, True, (255, 255, 255))
+        rect_fond = pygame.Rect(0, HAUTEUR - 30, LARGEUR, 30)
+        pygame.draw.rect(fenetre, GRIS_CLAIR, rect_fond)
+        rect_texte = texte_message.get_rect(center=(LARGEUR//2, HAUTEUR - 15))
+        fenetre.blit(texte_message, rect_texte)
+    elif etat == "FIN":
+        voile = pygame.Surface((LARGEUR, HAUTEUR))                              # Crée une surface pour le voile
+        voile.set_alpha(180)                                                    # Transparence du voile
+        voile.fill((0,0,0))                                                     # Couleur du voile (noir)
+        fenetre.blit(voile, (0, 0))                                             # Affiche le voile sur la fenêtre  
+        texte_fin = police_titre.render("Partie terminée", True, (255, 50, 50))
+        texte_rejouer = police_instruction.render("Appuyez sur R pour rejouer ou Q pour quitter", True, (200, 200, 200))
+
+        rect_fin = texte_fin.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50))
+        rect_rejouer = texte_rejouer.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 50))
+
+        fenetre.blit(texte_fin, rect_fin)
+        fenetre.blit(texte_rejouer, rect_rejouer)
+    pygame.display.flip()
 pygame.quit()
 sys.exit()
