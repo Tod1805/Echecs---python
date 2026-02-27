@@ -37,7 +37,70 @@ class EtatDeJeu:
             return True
         if abs(dep_colonne - arr_colonne) == 1 and arr_ligne == dep_ligne + direction and self.plateau[arr_ligne][arr_colonne] != "" and self.plateau[arr_ligne][arr_colonne][0] != piece[0]:
             return True
-        return False                                            
+        return False
+    def mouvement_valide_cavalier(self, dep, arr):
+        dep_ligne, dep_colonne = dep
+        arr_ligne, arr_colonne = arr
+        diff_ligne = abs(arr_ligne - dep_ligne)
+        diff_colonne = abs(arr_colonne - dep_colonne)
+        return (diff_ligne == 2 and diff_colonne == 1) or (diff_ligne == 1 and diff_colonne == 2)
+    def mouvement_valide_fou(self, dep, arr):
+        dep_ligne, dep_colonne = dep
+        arr_ligne, arr_colonne = arr
+        if abs(arr_ligne - dep_ligne) == abs(arr_colonne - dep_colonne):
+            return self.chemin_libre(dep, arr)
+        return False
+    def chemin_libre(self, dep, arr):
+        d_ligne = 0 if arr[0] == dep[0] else (1 if arr[0] > dep[0] else -1)
+        d_colonne = 0 if arr[1] == dep[1] else (1 if arr[1] > dep[1] else -1)
+        current_ligne, current_colonne = dep[0] + d_ligne, dep[1] + d_colonne
+        while (current_ligne, current_colonne) != (arr[0], arr[1]):
+            if self.plateau[current_ligne][current_colonne] != "":
+                return False
+            current_ligne += d_ligne
+            current_colonne += d_colonne
+        return True
+    def mouvement_valide_tour(self, dep, arr):
+        dep_ligne, dep_colonne = dep
+        arr_ligne, arr_colonne = arr
+        if dep_ligne == arr_ligne or dep_colonne == arr_colonne:
+            return self.chemin_libre(dep, arr)
+        return False
+    def mouvement_valide_roi(self, dep, arr):
+        dep_ligne, dep_colonne = dep
+        arr_ligne, arr_colonne = arr
+        
+        diff_ligne = abs(arr_ligne - dep_ligne)
+        diff_colonne = abs(arr_colonne - dep_colonne)
+        return diff_ligne <= 1 and diff_colonne <= 1
+    def mouvements_valide(self, ligne, colonne):
+        mouvements = []
+        piece = self.plateau[ligne][colonne]
+        if piece == "":
+            return mouvements
+        for r in range(8):
+            for c in range(8):
+                valide = False
+                piece_destination = self.plateau[r][c]
+                if piece_destination != "" and piece_destination[0] == piece[0]:
+                    continue
+                type_p = piece[1]
+                if type_p == 'p':
+                    valide = self.mouvement_valide_pion((ligne, colonne), (r, c), piece)
+                elif type_p == 'N':
+                    valide = self.mouvement_valide_cavalier((ligne, colonne), (r, c))
+                elif type_p == 'B':           
+                    valide = self.mouvement_valide_fou((ligne, colonne), (r, c))
+                elif type_p == 'R':
+                    valide = self.mouvement_valide_tour((ligne, colonne), (r, c))
+                elif type_p == 'Q':
+                    valide = self.mouvement_valide_fou((ligne, colonne), (r, c)) or self.mouvement_valide_tour((ligne, colonne), (r, c))
+                elif type_p == 'K':
+                    valide = self.mouvement_valide_roi((ligne, colonne), (r, c))
+                if valide:
+                    mouvements.append((r, c))
+        return mouvements
+                                                   
 #Initialisation de pygame 
 
 pygame.init()                                                                   # demarre tous les modules pygame
@@ -97,14 +160,30 @@ while encours :
                     if piece_depart !="":
                         valide = False
                     
-                        if piece != "" and piece_depart[0] == piece_arrivee[0]:
+                        if piece_arrivee != "" and piece_depart[0] == piece_arrivee[0]:
                             valide = False
                             if piece[1] == 'p':
                                 valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
                                 valide = True
+                        else :
+                            type_piece = piece_depart[1]
+                            if type_piece == 'p':
+                                valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
+                            elif type_piece == 'N':
+                                valide = ej.mouvement_valide_cavalier((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
+                            elif type_piece == 'B':
+                                valide = ej.mouvement_valide_fou((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
+                            elif type_piece == 'R':
+                                valide = ej.mouvement_valide_tour((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
+                            elif type_piece == 'Q':
+                                valide = ej.mouvement_valide_fou((dep_ligne, dep_colonne), (arr_ligne, arr_colonne)) or ej.mouvement_valide_tour((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
+                            elif type_piece == 'K':
+                                valide = ej.mouvement_valide_roi((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
                             if valide:
-                                ej.plateau[arr_ligne][arr_colonne] = piece
+                                ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
+                                if piece_arrivee != "":
+                                    soundeffect()
 
                     selection = ()
                     clics_joueur = []
@@ -152,6 +231,22 @@ while encours :
                     x = (colonne * 100) + 5
                     y = (ligne * 100) + 5
                     fenetre.blit(IMAGES[piece], (x, y))
+        if selection != ():
+            ligne, colonne = selection
+            possibles = ej.mouvements_valide(ligne, colonne)
+            for m in possibles:
+                m_ligne, m_colonne = m
+
+                couleur_point = (100, 100, 100)
+                rayon = 15
+
+                if ej.plateau[m_ligne][m_colonne] !="":
+                    couleur_point = (255, 50, 50)
+                    rayon = 15
+
+                centre_x = m_colonne * 100 + 50
+                centre_y = m_ligne * 100 + 50
+                pygame.draw.circle(fenetre, couleur_point, (centre_x, centre_y), rayon)
 
         message = "ESC : Quitter | ENTREE : Menu"
         texte_message = police_petite.render(message, True, (255, 255, 255))
