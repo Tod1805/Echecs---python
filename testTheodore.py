@@ -29,7 +29,7 @@ class EtatDeJeu:
     def mouvement_valide_pion(self, dep, arr, piece):
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
-        direction = 1 if piece[0] == 'w' else -1
+        direction = - 1 if piece[0] == 'w' else 1
         if dep_colonne == arr_colonne and arr_ligne == dep_ligne + direction and self.plateau[arr_ligne][arr_colonne] == "":
             return True
         pion_depart = (piece == 'wp' and dep_ligne == 6) or (piece == 'bp' and dep_ligne == 1)
@@ -91,12 +91,21 @@ while encours :
                     dep_ligne, dep_colonne = clics_joueur[0]
                     arr_ligne, arr_colonne = clics_joueur[1]
                     piece = ej.plateau[dep_ligne][dep_colonne]
-                    if piece != "":
-                        if piece[1] == 'p':
-                            valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece)
-                        if valide:
-                            ej.plateau[arr_ligne][arr_colonne] = piece
-                            ej.plateau[dep_ligne][dep_colonne] = ""
+                    piece_depart = ej.plateau[dep_ligne][dep_colonne]
+                    piece_arrivee = ej.plateau[arr_ligne][arr_colonne]
+
+                    if piece_depart !="":
+                        valide = False
+                    
+                        if piece != "" and piece_depart[0] == piece_arrivee[0]:
+                            valide = False
+                            if piece[1] == 'p':
+                                valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
+                                valide = True
+                            if valide:
+                                ej.plateau[arr_ligne][arr_colonne] = piece
+                                ej.plateau[dep_ligne][dep_colonne] = ""
+
                     selection = ()
                     clics_joueur = []
         if event.type == pygame.KEYDOWN:
