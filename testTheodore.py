@@ -158,30 +158,36 @@ while encours :
                     piece_arrivee = ej.plateau[arr_ligne][arr_colonne]
 
                     if piece_depart !="":
-                        valide = False
-                    
-                        if piece_arrivee != "" and piece_depart[0] == piece_arrivee[0]:
-                            valide = False
-                            if piece[1] == 'p':
-                                valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
-                                valide = True
-                        else :
-                            type_piece = piece_depart[1]
-                            if type_piece == 'p':
-                                valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
-                            elif type_piece == 'N':
-                                valide = ej.mouvement_valide_cavalier((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
-                            elif type_piece == 'B':
-                                valide = ej.mouvement_valide_fou((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
-                            elif type_piece == 'R':
-                                valide = ej.mouvement_valide_tour((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
-                            elif type_piece == 'Q':
-                                valide = ej.mouvement_valide_fou((dep_ligne, dep_colonne), (arr_ligne, arr_colonne)) or ej.mouvement_valide_tour((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
-                            elif type_piece == 'K':
-                                valide = ej.mouvement_valide_roi((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
+                        tour_correct = (ej.trait_aux_blancs and piece_depart[0] == 'w') or (not ej.trait_aux_blancs and piece_depart[0] == 'b')
+                        if tour_correct:
+                            if piece_arrivee != "" and piece_depart[0] == piece_arrivee[0]:
+                                valide = False
+                                if piece[1] == 'p':
+                                    valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
+                                    valide = True
+                            else :
+                                type_piece = piece_depart[1]
+                                if type_piece == 'p':
+                                    valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
+                                elif type_piece == 'N':
+                                    valide = ej.mouvement_valide_cavalier((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
+                                elif type_piece == 'B':
+                                    valide = ej.mouvement_valide_fou((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
+                                elif type_piece == 'R':
+                                    valide = ej.mouvement_valide_tour((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
+                                elif type_piece == 'Q':
+                                    valide = ej.mouvement_valide_fou((dep_ligne, dep_colonne), (arr_ligne, arr_colonne)) or ej.mouvement_valide_tour((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
+                                elif type_piece == 'K':
+                                    valide = ej.mouvement_valide_roi((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
                             if valide:
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
+                                if (piece_depart == "wp" and arr_ligne == 0) or (piece_depart == "bp" and arr_ligne == 7):
+                                    etat = "PROMOTION"
+                                    possibilites_promotion = (arr_ligne, arr_colonne)
+                                    couleur_promue = 'w' if piece_depart[0] == 'w' else 'b'
+                                else :
+                                    ej.trait_aux_blancs = not ej.trait_aux_blancs
                                 if piece_arrivee != "":
                                     soundeffect()
 
@@ -255,6 +261,25 @@ while encours :
         pygame.draw.rect(fenetre, GRIS_CLAIR, rect_fond)
         rect_texte = texte_message.get_rect(center=(LARGEUR//2, HAUTEUR - 15))
         fenetre.blit(texte_message, rect_texte)
+        couleur_tour = "Blancs" if ej.trait_aux_blancs else "Noirs"
+        texte_tour = police_petite.render(f"Tour des {couleur_tour}", True, (255, 255, 255))
+        pygame.draw.rect(fenetre, (50, 50, 50), (5, 5, 120, 25))
+        fenetre.blit(texte_tour, (10, 8))
+
+    elif etat == "PROMOTION":
+        draw_plateau(fenetre, ej.plateau)
+        draw_pieces(fenetre, ej.plateau)
+    
+        overlay = pygame.Surface((400, 200))
+        overlay.set_alpha(220)
+        overlay.fill((50, 50, 50))
+        fenetre.blit(overlay, (200, 300))
+    
+        options = ["Dame Q", "Tour R", "Fou B", "Cavalier N"]
+        for i, option in enumerate(options):
+            texte_option = police_petite.render(option, True, (255, 255, 255))
+            fenetre.blit(texte_option, (250, 320 + i * 40))
+
     elif etat == "FIN":
         voile = pygame.Surface((LARGEUR, HAUTEUR))                              # Crée une surface pour le voile
         voile.set_alpha(180)                                                    # Transparence du voile
@@ -269,5 +294,6 @@ while encours :
         fenetre.blit(texte_fin, rect_fin)
         fenetre.blit(texte_rejouer, rect_rejouer)
     pygame.display.flip()
+    
 pygame.quit()
 sys.exit()
