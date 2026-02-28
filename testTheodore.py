@@ -168,6 +168,17 @@ class EtatDeJeu:
                     if len(mouvements) > 0:
                         return False
         return True
+    def est_pat(self, couleur):
+        if self.est_en_echec(couleur):
+            return False
+        for r in range(8):
+            for c in range(8):
+                piece = self.plateau[r][c]
+                if piece != "" and piece[0] == couleur:
+                    mouvements = self.mouvements_valide(r, c)
+                    if len(self.mouvements_valide(r, c)) > 0:
+                        return False
+        return True
     
                     
                                                    
@@ -186,6 +197,8 @@ clics_joueur = []                                                               
 encours = True                                                                  #controle de la boucle principal du jeu                                                              # joue le son d'arrière plan défini dans sound.py
 
 etat = "MENU"
+
+gagnant = ""
 
 debut_clignotement = 0
 case_roi_en_echec = None
@@ -255,11 +268,12 @@ while encours :
                             if valide:
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
+                                prochaine_joueur = 'w' if ej.trait_aux_blancs else 'b'
                                 couleur_suivante = 'w' if ej.trait_aux_blancs else 'b'
-                                if ej.est_en_echec(couleur_suivante):
+                                if ej.est_echec_et_mat(couleur_suivante):
                                     print(f"Echec et mat ! Les {'Blancs' if couleur_suivante == 'b' else 'Noirs'} ont gagné !")
                                     etat = "FIN"
-                                    gagnant = 'Blancs' if couleur_suivante == 'b' else 'Noirs'
+                                    gagnant = 'Blancs' if not ej.trait_aux_blancs else 'Noirs'
                                 if (piece_depart == "wp" and arr_ligne == 0) or (piece_depart == "bp" and arr_ligne == 7):
                                     etat = "PROMOTION"
                                     possibilites_promotion = (arr_ligne, arr_colonne)
@@ -360,10 +374,13 @@ while encours :
                 pygame.draw.circle(fenetre, couleur_point, (centre_x, centre_y), rayon)
         couleur_actuelle = "w" if ej.trait_aux_blancs else "b"
         if ej.est_echec_et_mat(couleur_actuelle):
-            texte_mat = police_titre.render("Échec au roi " + ("Blancs" if couleur_actuelle == 'w' else "Noirs"), True, (255, 50, 50))
-            rect_mat = texte_mat.get_rect(center=(LARGEUR//2, HAUTEUR//2))
-            pygame.draw.rect(fenetre, (0, 0, 0), rect_mat.inflate(20, 20))
-            fenetre.blit(texte_mat, rect_mat)
+            etat = "FIN"
+            gagnant = 'Blancs' if not ej.trait_aux_blancs else 'Noirs'
+            texte_echec_mat = police_titre.render("Échec et mat ! Gagnant : " + gagnant, True, (255, 50, 50))
+            rect_echec_mat = texte_echec_mat.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 100))
+            pygame.draw.rect(fenetre, (0, 0, 0), rect_echec_mat.inflate(20, 20))
+            fenetre.blit(texte_echec_mat, rect_echec_mat)
+            pygame.mixer.fadeout(10000)                                                                           # Fondu de 10 secondes pour la musique de fond
         elif ej.est_en_echec(couleur_actuelle):
             texte_echec = police_titre.render("Échec au roi " + ("Blancs" if couleur_actuelle == 'w' else "Noirs"), True, (255, 50, 50))
             rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2))
@@ -407,36 +424,54 @@ while encours :
                     y = (ligne * 100) + 5
                     fenetre.blit(IMAGES[piece], (x, y))
     
-        overlay = pygame.Surface((400, 200))
-        overlay.set_alpha(220)
-        overlay.fill((50, 50, 50))
-        fenetre.blit(overlay, (200, 300))
+        overlay = pygame.Surface((400, 200))                                                   # Crée une surface pour l'overlay de promotion
+        overlay.set_alpha(220)                                                                 # Transparence de l'overlay
+        overlay.fill((50, 50, 50))                                                             # Couleur de l'overlay (gris foncé)
+        fenetre.blit(overlay, (200, 300))                                                      # Affiche l'overlay de promotion au centre de la fenêtre
     
-        options = ["Dame Q", "Tour R", "Fou B", "Cavalier N"]
-        for i, option in enumerate(options):
-            texte_option = police_petite.render(option, True, (255, 255, 255))
-            fenetre.blit(texte_option, (250, 320 + i * 40))
+        options = ["Dame Q", "Tour R", "Fou B", "Cavalier N"]                                  # Options de promotion pour la pièce promue
+        for i, option in enumerate(options):                                                   # Affiche les options de promotion pour la pièce promue
+            texte_option = police_petite.render(option, True, (255, 255, 255))                 # Affiche les options de promotion en blanc
+            fenetre.blit(texte_option, (250, 320 + i * 40))                                    # Affiche les options de promotion dans la fenêtre
 
     elif etat == "FIN":
-        voile = pygame.Surface((LARGEUR, HAUTEUR))                              # Crée une surface pour le voile
-        voile.set_alpha(180)                                                    # Transparence du voile
-        voile.fill((0,0,0))                                                     # Couleur du voile (noir)
-        fenetre.blit(voile, (0, 0))                                             # Affiche le voile sur la fenêtre  
-        texte_fin = police_titre.render("Partie terminée", True, (255, 50, 50))
-        texte_rejouer = police_instruction.render("Appuyez sur R pour rejouer ou Q pour quitter", True, (200, 200, 200))
+        voile = pygame.Surface((LARGEUR, HAUTEUR))                                             # Crée une surface pour le voile
+        voile.set_alpha(180)                                                                   # Transparence du voile
+        voile.fill((0,0,0))                                                                    # Couleur du voile (noir)
+        fenetre.blit(voile, (0, 0))                                                            # Affiche le voile sur la fenêtre  
+        
+        if "Pat" in gagnant:
+            titre = "MATCH NUL"
+            couleur_titre = (200, 200, 200) # Attribue la couleur gris à la variable couleur_titre
+            sous_titre = "Le joueur est bloqué sans être en échecs."
+        else :
+            titre = "ECHEC ET MAT !"
+            couleur_titre = (255, 215, 0)
+            sous_titre = f"Victoire des {gagnant} !"
 
-        rect_fin = texte_fin.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50))
-        rect_rejouer = texte_rejouer.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 50))
+        texte_titre = police_titre.render(titre, True, couleur_titre)
+        rect_titre = texte_titre.get_rect(center=(LARGEUR//2, HAUTEUR//2))
+        texte_vainqueur = police_instruction.render(sous_titre, True, (255, 255, 255))
+        rect_vainqueur = texte_vainqueur.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 10))
 
-        fenetre.blit(texte_fin, rect_fin)
-        fenetre.blit(texte_rejouer, rect_rejouer)
-    couleur_actuelle = "white" if ej.trait_aux_blancs else "black"
-    if ej.est_en_echec(couleur_actuelle):
-        texte_echec = police_titre.render("Échec au roi " + couleur_actuelle, True, (255, 50, 50))
-        rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2))
-        pygame.draw.rect(fenetre, (0, 0, 0), (rect_echec.x - 10, rect_echec.y - 10, rect_echec.width + 20, rect_echec.height + 20))
-        fenetre.blit(texte_echec, rect_echec)
-    pygame.display.flip()
+
+
+        texte_fin = police_titre.render("Partie terminée", True, (255, 50, 50)) # Affiche le message de fin en rouge vif
+        texte_rejouer = police_instruction.render("Appuyez sur R pour rejouer ou Q pour quitter", True, (200, 200, 200))# Affiche les instructions pour rejouer ou quitter en gris clair
+        rect_fin = texte_fin.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50)) # Dessine un rectangle du message de fin
+        rect_rejouer = texte_rejouer.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 50)) # Dessine un rectangle des instructions pour rejouer ou quitter
+
+        fenetre.blit(texte_titre, rect_titre)
+        fenetre.blit(texte_vainqueur, rect_vainqueur)
+        fenetre.blit(texte_fin, rect_fin) # Affiche le message de fin
+        fenetre.blit(texte_rejouer, rect_rejouer) # Affiche les instructions pour rejouer ou quitter
+    couleur_actuelle = "white" if ej.trait_aux_blancs else "black" # Détermine la couleur du joueur actuel
+    if ej.est_en_echec(couleur_actuelle): # Affiche un message d'échec au roi du joueur actuel
+        texte_echec = police_titre.render("Échec au roi " + couleur_actuelle, True, (255, 50, 50)) # Affiche le message d'échec en rouge vif
+        rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2)) # Affiche le rectangle du message d'échec
+        pygame.draw.rect(fenetre, (0, 0, 0), (rect_echec.x - 10, rect_echec.y - 10, rect_echec.width + 20, rect_echec.height + 20)) # Dessine un rectangle noir derrière le message d'échec pour le faire ressortir
+        fenetre.blit(texte_echec, rect_echec) # Affiche le message d'échec au roi du joueur actuel
+    pygame.display.flip() # Met à jour l'affichage de la fenêtre
     
-pygame.quit()
-sys.exit()
+pygame.quit() # Quitte pygame proprement
+sys.exit() # Quitte le programme proprement
