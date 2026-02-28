@@ -11,19 +11,21 @@ def charger_images():
         chemin = "images/" + piece + ".png"
         IMAGES[piece] = pygame.transform.scale(pygame.image.load(chemin), (90, 90))
 
-class EtatDeJeu:
-    def __init__(self):
-        self.plateau = [
-            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
-            ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
+class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris le plateau, le trait aux blancs, le compteur de 50 coups et l'historique des positions
+    def __init__(self): # Initialise l'état du jeu avec le plateau de départ, le trait aux blancs, le compteur de 50 coups et l'historique des positions
+        self.plateau = [ # Le plateau de jeu est représenté par une liste de listes, où chaque élément est une chaîne de caractères représentant la pièce présente sur la case ou une chaîne vide pour les cases vides
+            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"], # Les pièces noires sont représentées par des chaînes de caractères commençant par 'b' et les pièces blanches par des chaînes commençant par 'w'
+            ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"], # Les pions sont représentés par 'p', les tours par 'R', les cavaliers par 'N', les fous par 'B', la dame par 'Q' et le roi par 'K'
+            ["", "", "", "", "", "", "", ""],# Les cases vides sont représentées par des chaînes de caractères vides
             ["", "", "", "", "", "", "", ""],
             ["", "", "", "", "", "", "", ""],
             ["", "", "", "", "", "", "", ""],
-            ["", "", "", "", "", "", "", ""],
-            ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
+            ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"], # Les pièces blanches sont représentées par des chaînes de caractères commençant par 'w' et les pièces noires par des chaînes commençant par 'b'
+            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],# Les pions sont représentés par 'p', les tours par 'R', les cavaliers par 'N', les fous par 'B', la dame par 'Q' et le roi par 'K'
         ]
-        self.trait_aux_blancs = True
+        self.trait_aux_blancs = True # True si c'est au tour des blancs, False pour les noirs
+        self.compteur_50_coups = 0 # Compteur pour la règle des 50 coups
+        self.historique_position = [] # Historique des mouvements pour la nulle par répétition
     def mouvement_valide_pion(self, dep, arr, piece):
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
@@ -179,9 +181,36 @@ class EtatDeJeu:
                     if len(self.mouvements_valide(r, c)) > 0:
                         return False
         return True
-    
-                    
-                                                   
+    def enregistrer_position(self):
+        position_actuelle = tuple(tuple(row) for row in self.plateau)
+        self.historique_position.append(position_actuelle)
+    def est_triple_repetition(self):
+        if not self.historique_position:
+            return False
+        position_actuelle = self.historique_position[-1]
+        occurrences = self.historique_position.count(position_actuelle)
+
+        return occurrences >= 3
+    def est_manque_de_matériel(self):
+        pieces_blanches = []
+        pieces_noires = []
+        for ligne in range(8):
+            for colonne in range (8):
+                piece = self.plateau[ligne][colonne]
+                if piece != "":
+                    if piece[0] == 'w':
+                        pieces_blanches.append(piece[1])
+                    else:
+                        pieces_noires.append(piece[1])
+        if len(pieces_blanches) == 1 and len(pieces_noires) == 1:
+            return True # Roi contre roi
+        if len(pieces_blanches) <= 2 and len(pieces_noires) <= 2:
+            unique_blanc = [p for p in pieces_blanches if p != 'K']
+            unique_noir = [p for p in pieces_noires if p != 'K']
+            if (not unique_blanc and unique_noir in [['N'], ['B']]) or (not unique_noir and unique_blanc in [['N'], ['B']]):
+                return True # Roi contre roi + cavalier ou fou
+        return False
+
 #Initialisation de pygame 
 
 pygame.init()                                                                   # demarre tous les modules pygame
@@ -199,6 +228,7 @@ encours = True                                                                  
 etat = "MENU"
 
 gagnant = ""
+historique_positions = []
 
 debut_clignotement = 0
 case_roi_en_echec = None
@@ -268,15 +298,25 @@ while encours :
                             if valide:
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
+                                ej.enregistrer_position()
                                 ej.trait_aux_blancs = not ej.trait_aux_blancs
                                 joueur_actuel = 'w' if ej.trait_aux_blancs else 'b'
                                 if ej.est_echec_et_mat(joueur_actuel):
                                     print(f"Echec et mat ! Les {'Blancs' if joueur_actuel == 'b' else 'Noirs'} ont gagné !")
                                     etat = "FIN"
                                     gagnant = 'Noirs' if joueur_actuel == 'w' else 'Blancs'
-                                else :
+                                elif ej.est_pat(joueur_actuel):
                                     etat = "FIN"
                                     gagnant = "Pat"
+                                elif ej.compteur_50_coups >= 100: # 50 coups pour chaque joueur sans déplacement de pion ni capture
+                                    etat = "FIN"
+                                    gagnant = "50 coups"
+                                elif ej.est_triple_repetition():
+                                    etat = "FIN"
+                                    gagnant = "Répétition"
+                                elif ej.est_manque_de_matériel(): # Vérifie les conditions de nulle par manque de matériel (roi contre roi, roi contre roi + fou ou roi contre roi + cavalier)
+                                    etat = "FIN"
+                                    gagnant = "Manque de matériel"
                                 if (piece_depart == "wp" and arr_ligne == 0) or (piece_depart == "bp" and arr_ligne == 7):
                                     etat = "PROMOTION"
                                     possibilites_promotion = (arr_ligne, arr_colonne)
@@ -286,6 +326,12 @@ while encours :
                                     print("Mouvement invalide : met le roi en échec")
                                 if piece_arrivee != "":
                                     soundeffect()
+                                est_capture = (piece_arrivee != "")
+                                est_pion = (piece_depart[1] == 'p')
+                                if est_capture or est_pion:
+                                    ej.compteur_50_coups = 0 # Réinitialise le compteur de 50 coups si une pièce a été capturée ou si un pion
+                                else:
+                                    ej.compteur_50_coups += 1 # Ajoute 1 au compteur de 50 coups si aucun pion n'a été déplacé et aucune pièce n'a été capturée
 
                     selection = ()
                     clics_joueur = []
@@ -411,6 +457,8 @@ while encours :
         else: 
             case_roi_en_echec = None                                                           # Arrête le clignotement après 2 secondes
 
+    
+    
     elif etat == "PROMOTION":
         for ligne in range(8):
             for colonne in range (8):
@@ -441,14 +489,29 @@ while encours :
         voile.fill((0,0,0))                                                                    # Couleur du voile (noir)
         fenetre.blit(voile, (0, 0))                                                            # Affiche le voile sur la fenêtre  
         
+        couleur_titre = (200, 200, 200) # Attribue la couleur gris à la variable couleur_titre
+
         if "Pat" in gagnant:
-            titre = "MATCH NUL"
-            couleur_titre = (200, 200, 200) # Attribue la couleur gris à la variable couleur_titre
-            sous_titre = "Le joueur est bloqué sans être en échecs."
-        else :
+            titre = "MATCH NUL !"
+            sous_titre = "Match nul par pat !"
+            pygame.mixer.fadeout(10000) # Fondu de 10 secondes pour la musique de fond
+        elif "Répétition" in gagnant:
+            titre = "MATCH NUL !"
+            sous_titre = "Match nul par répétition !"
+            pygame.mixer.fadeout(10000) # Fondu de 10 secondes pour la musique de fond
+        elif "50 coups" in gagnant:
+            titre = "MATCH NUL !"
+            sous_titre = "Match nul par règle des 50 coups !"
+            pygame.mixer.fadeout(10000) # Fondu de 10 secondes pour la musique de fond
+        elif gagnant in ["Blancs", "Noirs"]:
             titre = "ECHEC ET MAT !"
             couleur_titre = (255, 215, 0)
             sous_titre = f"Victoire des {gagnant} !"
+            pygame.mixer.fadeout(10000) # Fondu de 10 secondes pour la musique de fond
+        elif "Manque de matériel" in gagnant:
+            titre = "MATCH NUL !"
+            sous_titre = "Match nul par manque de matériel !"
+            pygame.mixer.fadeout(10000) # Fondu de 10 secondes pour la musique de fond
 
         texte_titre = police_titre.render(titre, True, couleur_titre)
         rect_titre = texte_titre.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 90))
