@@ -1,8 +1,9 @@
-import sys                                                                      #permet de quitter proprement le programme
-import pygame                                                                   #librairie principale pour le jeu
-from sound import soundbackground                                               #musique de fond
-from sound import soundeffect                                                   #effet sonore
+import sys                                                                      # permet de quitter proprement le programme
+import pygame                                                                   # librairie principale pour le jeu
+from sound import soundbackground                                               # musique de fond
+from sound import soundeffect                                                   # effet sonore
 from sound import soundbackground_tod
+from sound import vibration
 
 from pygame.locals import *                                                     # Constantes pygame (K_SPACE, QUIT, etc.)
 
@@ -66,6 +67,15 @@ class EtatDeJeu:
         if dep_ligne == arr_ligne or dep_colonne == arr_colonne:
             return self.chemin_libre(dep, arr)
         return False
+    def simuler_mouvement_et_verifier_echec(self, dep, arr, couleur):
+        piece_depart = self.plateau[dep[0]][dep[1]]
+        piece_arrivee = self.plateau[arr[0]][arr[1]]
+        self.plateau[arr[0]][arr[1]] = piece_depart
+        self.plateau[dep[0]][dep[1]] = ""
+        en_echec = self.est_en_echec(couleur)
+        self.plateau[dep[0]][dep[1]] = piece_depart
+        self.plateau[arr[0]][arr[1]] = piece_arrivee
+        return en_echec
     def mouvement_valide_roi(self, dep, arr):
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
@@ -98,8 +108,60 @@ class EtatDeJeu:
                 elif type_p == 'K':
                     valide = self.mouvement_valide_roi((ligne, colonne), (r, c))
                 if valide:
+                    couleur_joueur = piece[0]
+                    if not self.simuler_mouvement_et_verifier_echec((ligne, colonne), (r, c), couleur_joueur):
+                        mouvements.append((r, c))
+        return mouvements
+    def est_en_echec(self, couleur_roi):
+        roi_position = None
+        chercher = couleur_roi + "K"
+        for r in range(8):
+            for c in range(8):
+                if self.plateau[r][c] == chercher:
+                    roi_position = (r, c)
+                    break
+            if roi_position:
+                break
+        if not roi_position:
+            return False
+        couleur_ennemie = 'b' if couleur_roi == 'w' else 'w'
+        for r in range(8):
+            for c in range(8):
+                piece = self.plateau[r][c]
+                if piece != "" and piece[0] == couleur_ennemie:
+                    mouvements_possibles = self.get_mouvements_physiques(r, c)
+                    if roi_position in mouvements_possibles:
+                        return True
+        return False
+    def get_mouvements_physiques(self, ligne, colonne):
+        mouvements = []
+        piece = self.plateau[ligne][colonne]
+        if piece == "":
+            return mouvements
+        for r in range(8):
+            for c in range(8):
+                valide = False
+                piece_destination = self.plateau[r][c]
+                if piece_destination != "" and piece_destination[0] == piece[0]:
+                    continue
+                type_p = piece[1]
+                if type_p == 'p':
+                    valide = self.mouvement_valide_pion((ligne, colonne), (r, c), piece)
+                elif type_p == 'N':
+                    valide = self.mouvement_valide_cavalier((ligne, colonne), (r, c))
+                elif type_p == 'B':           
+                    valide = self.mouvement_valide_fou((ligne, colonne), (r, c))
+                elif type_p == 'R':
+                    valide = self.mouvement_valide_tour((ligne, colonne), (r, c))
+                elif type_p == 'Q':
+                    valide = self.mouvement_valide_fou((ligne, colonne), (r, c)) or self.mouvement_valide_tour((ligne, colonne), (r, c))
+                elif type_p == 'K':
+                    valide = self.mouvement_valide_roi((ligne, colonne), (r, c))
+                if valide:
                     mouvements.append((r, c))
         return mouvements
+    
+                    
                                                    
 #Initialisation de pygame 
 
@@ -116,6 +178,9 @@ clics_joueur = []                                                               
 encours = True                                                                  #controle de la boucle principal du jeu                                                              # joue le son d'arrière plan défini dans sound.py
 
 etat = "MENU"
+
+debut_clignotement = 0
+case_roi_en_echec = None
 
 # Définition des polices
 police_titre = pygame.font.SysFont("Verdana", 35, bold=True)
@@ -162,10 +227,7 @@ while encours :
                         if tour_correct:
                             if piece_arrivee != "" and piece_depart[0] == piece_arrivee[0]:
                                 valide = False
-                                if piece[1] == 'p':
-                                    valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
-                                    valide = True
-                            else :
+                            else:
                                 type_piece = piece_depart[1]
                                 if type_piece == 'p':
                                     valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
@@ -180,6 +242,9 @@ while encours :
                                 elif type_piece == 'K':
                                     valide = ej.mouvement_valide_roi((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
                             if valide:
+                                if ej.simuler_mouvement_et_verifier_echec((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart[0]):
+                                    valide = False
+                            if valide:
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
                                 if (piece_depart == "wp" and arr_ligne == 0) or (piece_depart == "bp" and arr_ligne == 7):
@@ -188,11 +253,21 @@ while encours :
                                     couleur_promue = 'w' if piece_depart[0] == 'w' else 'b'
                                 else :
                                     ej.trait_aux_blancs = not ej.trait_aux_blancs
+                                if ej.simuler_mouvement_et_verifier_echec((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart[0]):
+                                    valide = False
+                                    print("Mouvement invalide : met le roi en échec")
                                 if piece_arrivee != "":
                                     soundeffect()
 
                     selection = ()
                     clics_joueur = []
+                couleur_suivante = 'w' if ej.trait_aux_blancs else 'b'
+                if ej.est_en_echec(couleur_suivante):
+                    debut_clignotement = pygame.time.get_ticks()
+                    for r in range(8):
+                        for c in range(8):
+                            if ej.plateau[r][c] == couleur_suivante + "K":
+                                case_roi_en_echec = (r, c)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 if etat == "MENU":
@@ -211,19 +286,23 @@ while encours :
             if event.key == pygame.K_ESCAPE:
                 if etat == "JEU":
                     etat = "FIN"
-                    pygame.mixer.fadeout(5000)                                    # Fondu de 5 secondes pour la musique de fond
+                    pygame.mixer.fadeout(10000)                                    # Fondu de 10 secondes pour la musique de fond
             if etat == "PROMOTION":
                 if event.key == pygame.K_q:
                     ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "Q"
+                    ej.trait_aux_blancs = not ej.trait_aux_blancs
                     etat = "JEU"
                 elif event.key == pygame.K_r:
                     ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "R"
+                    ej.trait_aux_blancs = not ej.trait_aux_blancs
                     etat = "JEU"
                 elif event.key == pygame.K_b:
                     ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "B"
+                    ej.trait_aux_blancs = not ej.trait_aux_blancs
                     etat = "JEU"
                 elif event.key == pygame.K_n:
                     ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "N"
+                    ej.trait_aux_blancs = not ej.trait_aux_blancs
                     etat = "JEU"
     if etat == "MENU":
         fenetre.fill((0,0,0))                                                     #met à jour l'ecran
@@ -278,6 +357,18 @@ while encours :
         texte_tour = police_petite.render(f"Tour des {couleur_tour}", True, (255, 255, 255))
         pygame.draw.rect(fenetre, (50, 50, 50), (5, 5, 120, 25))
         fenetre.blit(texte_tour, (10, 8))
+    if case_roi_en_echec:
+        temps_ecoule = pygame.time.get_ticks() - debut_clignotement
+        if temps_ecoule < 2000:                                                                # Clignote pendant 2 secondes
+            if (temps_ecoule // 250) % 2 == 0:                                                 # Alterne entre visible et invisible toutes les 250 ms
+                r, c = case_roi_en_echec                                                       # Affiche un clignotement rouge sur la case du roi en échec
+                s = pygame.Surface((100, 100))                                                 # Crée une surface pour le clignotement
+                s.set_alpha(128)                                                               # Transparence
+                s.fill((255, 0, 0))                                                            # Couleur rouge
+                fenetre.blit(s, (c * 100, r * 100))                                            # Affiche le clignotement sur la case du roi en échec
+                vibration()                                                                    # Déclenche un son de vibration pour renforcer l'effet d'échec
+        else: 
+            case_roi_en_echec = None                                                           # Arrête le clignotement après 2 secondes
 
     elif etat == "PROMOTION":
         for ligne in range(8):
@@ -316,6 +407,12 @@ while encours :
 
         fenetre.blit(texte_fin, rect_fin)
         fenetre.blit(texte_rejouer, rect_rejouer)
+    couleur_actuelle = "white" if ej.trait_aux_blancs else "black"
+    if ej.est_en_echec(couleur_actuelle):
+        texte_echec = police_titre.render("Échec au roi " + couleur_actuelle, True, (255, 50, 50))
+        rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2))
+        pygame.draw.rect(fenetre, (0, 0, 0), (rect_echec.x - 10, rect_echec.y - 10, rect_echec.width + 20, rect_echec.height + 20))
+        fenetre.blit(texte_echec, rect_echec)
     pygame.display.flip()
     
 pygame.quit()
