@@ -268,18 +268,19 @@ while encours :
                             if valide:
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
-                                prochaine_joueur = 'w' if ej.trait_aux_blancs else 'b'
-                                couleur_suivante = 'w' if ej.trait_aux_blancs else 'b'
-                                if ej.est_echec_et_mat(couleur_suivante):
-                                    print(f"Echec et mat ! Les {'Blancs' if couleur_suivante == 'b' else 'Noirs'} ont gagné !")
+                                ej.trait_aux_blancs = not ej.trait_aux_blancs
+                                joueur_actuel = 'w' if ej.trait_aux_blancs else 'b'
+                                if ej.est_echec_et_mat(joueur_actuel):
+                                    print(f"Echec et mat ! Les {'Blancs' if joueur_actuel == 'b' else 'Noirs'} ont gagné !")
                                     etat = "FIN"
-                                    gagnant = 'Blancs' if not ej.trait_aux_blancs else 'Noirs'
+                                    gagnant = 'Noirs' if joueur_actuel == 'w' else 'Blancs'
+                                else :
+                                    etat = "FIN"
+                                    gagnant = "Pat"
                                 if (piece_depart == "wp" and arr_ligne == 0) or (piece_depart == "bp" and arr_ligne == 7):
                                     etat = "PROMOTION"
                                     possibilites_promotion = (arr_ligne, arr_colonne)
                                     couleur_promue = 'w' if piece_depart[0] == 'w' else 'b'
-                                else :
-                                    ej.trait_aux_blancs = not ej.trait_aux_blancs
                                 if ej.simuler_mouvement_et_verifier_echec((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart[0]):
                                     valide = False
                                     print("Mouvement invalide : met le roi en échec")
@@ -450,15 +451,15 @@ while encours :
             sous_titre = f"Victoire des {gagnant} !"
 
         texte_titre = police_titre.render(titre, True, couleur_titre)
-        rect_titre = texte_titre.get_rect(center=(LARGEUR//2, HAUTEUR//2))
-        texte_vainqueur = police_instruction.render(sous_titre, True, (255, 255, 255))
-        rect_vainqueur = texte_vainqueur.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 10))
+        rect_titre = texte_titre.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 90))
+        texte_vainqueur = police_instruction.render(sous_titre, True, (255, 255, 255)) 
+        rect_vainqueur = texte_vainqueur.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 40))
 
 
 
         texte_fin = police_titre.render("Partie terminée", True, (255, 50, 50)) # Affiche le message de fin en rouge vif
         texte_rejouer = police_instruction.render("Appuyez sur R pour rejouer ou Q pour quitter", True, (200, 200, 200))# Affiche les instructions pour rejouer ou quitter en gris clair
-        rect_fin = texte_fin.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50)) # Dessine un rectangle du message de fin
+        rect_fin = texte_fin.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 200)) # Dessine un rectangle du message de fin
         rect_rejouer = texte_rejouer.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 50)) # Dessine un rectangle des instructions pour rejouer ou quitter
 
         fenetre.blit(texte_titre, rect_titre)
