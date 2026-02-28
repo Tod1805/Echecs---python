@@ -1,9 +1,6 @@
 import sys                                                                      # permet de quitter proprement le programme
 import pygame                                                                   # librairie principale pour le jeu
-from sound import soundbackground                                               # musique de fond
-from sound import soundeffect                                                   # effet sonore
-from sound import soundbackground_tod
-from sound import vibration
+from sound import soundbackground, vibration, soundeffect, soundbackground_tod  # importe les fonctions de son définies dans sound.py
 
 from pygame.locals import *                                                     # Constantes pygame (K_SPACE, QUIT, etc.)
 
@@ -160,6 +157,17 @@ class EtatDeJeu:
                 if valide:
                     mouvements.append((r, c))
         return mouvements
+    def est_echec_et_mat(self, couleur):
+        if not self.est_en_echec(couleur):
+            return False
+        for r in range(8):
+            for c in range(8):
+                piece = self.plateau[r][c]
+                if piece != "" and piece[0] == couleur:
+                    mouvements = self.mouvements_valide(r, c)
+                    if len(mouvements) > 0:
+                        return False
+        return True
     
                     
                                                    
@@ -247,6 +255,11 @@ while encours :
                             if valide:
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
+                                couleur_suivante = 'w' if ej.trait_aux_blancs else 'b'
+                                if ej.est_en_echec(couleur_suivante):
+                                    print(f"Echec et mat ! Les {'Blancs' if couleur_suivante == 'b' else 'Noirs'} ont gagné !")
+                                    etat = "FIN"
+                                    gagnant = 'Blancs' if couleur_suivante == 'b' else 'Noirs'
                                 if (piece_depart == "wp" and arr_ligne == 0) or (piece_depart == "bp" and arr_ligne == 7):
                                     etat = "PROMOTION"
                                     possibilites_promotion = (arr_ligne, arr_colonne)
@@ -345,7 +358,17 @@ while encours :
                 centre_x = m_colonne * 100 + 50
                 centre_y = m_ligne * 100 + 50
                 pygame.draw.circle(fenetre, couleur_point, (centre_x, centre_y), rayon)
-
+        couleur_actuelle = "w" if ej.trait_aux_blancs else "b"
+        if ej.est_echec_et_mat(couleur_actuelle):
+            texte_mat = police_titre.render("Échec au roi " + ("Blancs" if couleur_actuelle == 'w' else "Noirs"), True, (255, 50, 50))
+            rect_mat = texte_mat.get_rect(center=(LARGEUR//2, HAUTEUR//2))
+            pygame.draw.rect(fenetre, (0, 0, 0), rect_mat.inflate(20, 20))
+            fenetre.blit(texte_mat, rect_mat)
+        elif ej.est_en_echec(couleur_actuelle):
+            texte_echec = police_titre.render("Échec au roi " + ("Blancs" if couleur_actuelle == 'w' else "Noirs"), True, (255, 50, 50))
+            rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2))
+            pygame.draw.rect(fenetre, (0, 0, 0), rect_echec.inflate(20, 20))
+            fenetre.blit(texte_echec, rect_echec)
         message = "ESC : Quitter | ENTREE : Menu"
         texte_message = police_petite.render(message, True, (255, 255, 255))
         
