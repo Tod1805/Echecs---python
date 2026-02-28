@@ -212,6 +212,19 @@ while encours :
                 if etat == "JEU":
                     etat = "FIN"
                     pygame.mixer.fadeout(5000)                                    # Fondu de 5 secondes pour la musique de fond
+            if etat == "PROMOTION":
+                if event.key == pygame.K_q:
+                    ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "Q"
+                    etat = "JEU"
+                elif event.key == pygame.K_r:
+                    ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "R"
+                    etat = "JEU"
+                elif event.key == pygame.K_b:
+                    ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "B"
+                    etat = "JEU"
+                elif event.key == pygame.K_n:
+                    ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "N"
+                    etat = "JEU"
     if etat == "MENU":
         fenetre.fill((0,0,0))                                                     #met à jour l'ecran
         texte_bienvenue = police_titre.render("Bienvenue dans notre jeu d'échecs", True, (255, 255, 255))
@@ -267,8 +280,18 @@ while encours :
         fenetre.blit(texte_tour, (10, 8))
 
     elif etat == "PROMOTION":
-        draw_plateau(fenetre, ej.plateau)
-        draw_pieces(fenetre, ej.plateau)
+        for ligne in range(8):
+            for colonne in range (8):
+                couleur = NOIR if (ligne + colonne) % 2 == 0 else BLANC
+                pygame.draw.rect(fenetre, couleur, pygame.Rect(colonne * taille_case, ligne * taille_case, taille_case, taille_case))
+        
+        for ligne in range(8):
+            for colonne in range(8):
+                piece = ej.plateau[ligne][colonne]
+                if piece != "":
+                    x = (colonne * 100) + 5
+                    y = (ligne * 100) + 5
+                    fenetre.blit(IMAGES[piece], (x, y))
     
         overlay = pygame.Surface((400, 200))
         overlay.set_alpha(220)
