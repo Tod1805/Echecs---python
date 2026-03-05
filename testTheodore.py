@@ -26,10 +26,14 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
         self.trait_aux_blancs = True # True si c'est au tour des blancs, False pour les noirs
         self.compteur_50_coups = 0 # Compteur pour la règle des 50 coups
         self.historique_position = [] # Historique des mouvements pour la nulle par répétition
+        self.case_en_passant = None
     def mouvement_valide_pion(self, dep, arr, piece):
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
         direction = - 1 if piece[0] == 'w' else 1
+        if (arr_ligne, arr_colonne) == self.case_en_passant:
+            if abs(arr_colonne - dep_colonne) == 1 and arr_ligne == dep_ligne + direction:
+                return True
         if dep_colonne == arr_colonne and arr_ligne == dep_ligne + direction and self.plateau[arr_ligne][arr_colonne] == "":
             return True
         pion_depart = (piece == 'wp' and dep_ligne == 6) or (piece == 'bp' and dep_ligne == 1)
@@ -37,6 +41,9 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
             return True
         if abs(dep_colonne - arr_colonne) == 1 and arr_ligne == dep_ligne + direction and self.plateau[arr_ligne][arr_colonne] != "" and self.plateau[arr_ligne][arr_colonne][0] != piece[0]:
             return True
+        if (arr_ligne, arr_colonne) == self.case_en_passant:
+            if abs(arr_colonne - dep_colonne) == 1 and arr_ligne == dep_ligne + direction:
+                return True
         return False
     def mouvement_valide_cavalier(self, dep, arr):
         dep_ligne, dep_colonne = dep
@@ -109,7 +116,12 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                 if valide:
                     couleur_joueur = piece[0]
                     if not self.simuler_mouvement_et_verifier_echec((ligne, colonne), (r, c), couleur_joueur):
-                        mouvements.append((r, c))
+                        est_capture_standard = self.plateau[r][c] != ""
+                        est_en_passant = (piece[1] == 'p' and (r, c) == self.case_en_passant)
+                        if est_capture_standard or est_en_passant:
+                            mouvements.append((r, c, True))
+                        else :
+                            mouvements.append((r, c, False))             
         return mouvements
     def est_en_echec(self, couleur_roi):
         roi_position = None
@@ -296,8 +308,14 @@ while encours :
                                 if ej.simuler_mouvement_et_verifier_echec((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart[0]):
                                     valide = False
                             if valide:
+                                if piece_depart[1] == 'p' and (arr_ligne, arr_colonne) == ej.case_en_passant:
+                                    ej.plateau[dep_ligne][arr_colonne] = ""
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
+                                if piece_depart[1] == 'p' and abs(arr_ligne - dep_colonne) == 2:
+                                    ej.case_en_passant = ((dep_ligne + arr_ligne) // 2, dep_colonne)
+                                else :
+                                    ej.case_en_passant = None
                                 ej.enregistrer_position()
                                 ej.trait_aux_blancs = not ej.trait_aux_blancs
                                 joueur_actuel = 'w' if ej.trait_aux_blancs else 'b'
@@ -408,9 +426,12 @@ while encours :
             possibles = ej.mouvements_valide(ligne, colonne)
             for m in possibles:
                 m_ligne, m_colonne = m
-
-                couleur_point = (100, 100, 100)
-                rayon = 15
+                if est_capture:
+                    couleur_point = (250, 50, 50)
+                    rayon = 15
+                else :
+                    couleur_point = (100, 100, 100)
+                    rayon = 15
 
                 if ej.plateau[m_ligne][m_colonne] !="":
                     couleur_point = (255, 50, 50)
