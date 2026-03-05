@@ -27,6 +27,12 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
         self.compteur_50_coups = 0 # Compteur pour la règle des 50 coups
         self.historique_position = [] # Historique des mouvements pour la nulle par répétition
         self.case_en_passant = None
+        self.deplacement_roi_blanc = False
+        self.deplacement_roi_noir = False
+        self.deplacement_tour_blanche_gauche = False
+        self.deplacement_tour_blanche_droite = False
+        self.deplacement_tour_noire_gauche = False
+        self.deplacement_tour_noire_droite = False
     def mouvement_valide_pion(self, dep, arr, piece):
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
@@ -222,12 +228,25 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
             if (not unique_blanc and unique_noir in [['N'], ['B']]) or (not unique_noir and unique_blanc in [['N'], ['B']]):
                 return True # Roi contre roi + cavalier ou fou
         return False
+    def peut_roquer(self, couleur, cote):
+        ligne = 7 if couleur == 'w' else 0
+        if self.est_en_echec(couleur): return False
+        if cote == "petit":
+            deja_bouge = self.deplacement_roi_blanc or self.deplacement_tour_blanche_droite if couleur == 'w' else self.deplacement_roi_noir or self.deplacement_tour_noire_droite
+            if not deja_bouge and self.plateau[ligne][5] == "" and self.plateau[ligne][6] == "":
+                return not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 5), couleur) and not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 6), couleur)
+        elif cote == "grand":
+            deja_bouge = self.deplacement_roi_blanc or self.deplacement_tour_blanche_gauche if couleur == 'w' else self.deplacement_roi_noir or self.deplacement_tour_noire_gauche
+            if not deja_bouge and self.plateau[ligne][1] == "" and self.plateau[ligne][2] == "" and self.plateau[ligne][3] == "":
+                return not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 3), couleur) and self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 2), couleur)
+        return False
 
 #Initialisation de pygame 
 
 pygame.init()                                                                   # demarre tous les modules pygame
 pygame.font.init()
-LARGEUR = HAUTEUR = 800
+LARGEUR = 800
+HAUTEUR = 830
 fenetre = pygame.display.set_mode((LARGEUR,HAUTEUR))
 pygame.display.set_caption("Jeu d'échecs")                                      #Titre du jeu, titre de la fenetre
 
@@ -425,18 +444,13 @@ while encours :
             ligne, colonne = selection
             possibles = ej.mouvements_valide(ligne, colonne)
             for m in possibles:
-                m_ligne, m_colonne = m
-                if est_capture:
+                m_ligne, m_colonne, m_est_capture = m
+                if m_est_capture:
                     couleur_point = (250, 50, 50)
                     rayon = 15
                 else :
                     couleur_point = (100, 100, 100)
                     rayon = 15
-
-                if ej.plateau[m_ligne][m_colonne] !="":
-                    couleur_point = (255, 50, 50)
-                    rayon = 15
-
                 centre_x = m_colonne * 100 + 50
                 centre_y = m_ligne * 100 + 50
                 pygame.draw.circle(fenetre, couleur_point, (centre_x, centre_y), rayon)
