@@ -317,27 +317,19 @@ while encours :
                     if piece_depart !="":
                         tour_correct = (ej.trait_aux_blancs and piece_depart[0] == 'w') or (not ej.trait_aux_blancs and piece_depart[0] == 'b')
                         if tour_correct:
-                            if piece_arrivee != "" and piece_depart[0] == piece_arrivee[0]:
-                                valide = False
-                            else:
-                                type_piece = piece_depart[1]
-                                if type_piece == 'p':
-                                    valide = ej.mouvement_valide_pion((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart)
-                                elif type_piece == 'N':
-                                    valide = ej.mouvement_valide_cavalier((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
-                                elif type_piece == 'B':
-                                    valide = ej.mouvement_valide_fou((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
-                                elif type_piece == 'R':
-                                    valide = ej.mouvement_valide_tour((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
-                                elif type_piece == 'Q':
-                                    valide = ej.mouvement_valide_fou((dep_ligne, dep_colonne), (arr_ligne, arr_colonne)) or ej.mouvement_valide_tour((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
-                                elif type_piece == 'K':
-                                    valide = ej.mouvement_valide_roi((dep_ligne, dep_colonne), (arr_ligne, arr_colonne))
-                            if valide:
-                                if ej.simuler_mouvement_et_verifier_echec((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart[0]):
-                                    valide = False
-                            if valide:
-                                # 1. GESTION DU ROQUE (On bouge la Tour AVANT le Roi)
+                            # On récupère tous les mouvements valides pour cette pièce
+                            # Ils sont sous la forme (ligne, col, est_capture)
+                            mouvements_possibles = ej.mouvements_valide(dep_ligne, dep_colonne)
+                            
+                            # On cherche si le clic d'arrivée correspond à un mouvement autorisé
+                            mouvement_choisi = None
+                            for m in mouvements_possibles:
+                                if m[0] == arr_ligne and m[1] == arr_colonne:
+                                    mouvement_choisi = m
+                                    break
+                            
+                            if mouvement_choisi:
+                                # --- 1. GESTION DU ROQUE ---
                                 if piece_depart[1] == 'K' and abs(arr_colonne - dep_colonne) == 2:
                                     tour_ligne = arr_ligne
                                     if arr_colonne == 6: # Petit roque
@@ -346,7 +338,8 @@ while encours :
                                     elif arr_colonne == 2: # Grand roque
                                         ej.plateau[tour_ligne][3] = ej.plateau[tour_ligne][0]
                                         ej.plateau[tour_ligne][0] = ""
-                                # 2. MISE À JOUR DES DRAPEAUX (Pour interdire de roquer à nouveau)
+
+                                # --- 2. MISE À JOUR DES DRAPEAUX ---
                                 if piece_depart == "wK": ej.deplacement_roi_blanc = True
                                 elif piece_depart == "bK": ej.deplacement_roi_noir = True
                                 elif piece_depart == "wR":
@@ -355,55 +348,43 @@ while encours :
                                 elif piece_depart == "bR":
                                     if dep_colonne == 0: ej.deplacement_tour_noire_gauche = True
                                     elif dep_colonne == 7: ej.deplacement_tour_noire_droite = True
-                                # 3. GESTION DE LA PRISE EN PASSANT (Suppression du pion adverse)
-                                if piece_depart[1] == 'p' and (arr_ligne, arr_colonne) == ej.case_en_passant:
-                                    ej.plateau[dep_ligne][arr_colonne] = ""
-                                # 4. MOUVEMENT PHYSIQUE DU ROI (OU DE LA PIÈCE SÉLECTIONNÉE)
-                                ej.plateau[arr_ligne][arr_colonne] = piece_depart
-                                ej.plateau[dep_ligne][dep_colonne] = ""
-                                # 5. MISE À JOUR DE LA CASE EN PASSANT (Pour le prochain tour)
-                                if piece_depart[1] == 'p' and abs(arr_ligne - dep_ligne) == 2:
-                                    ej.case_en_passant = ((dep_ligne + arr_ligne) // 2, dep_colonne)
-                                else:
-                                    ej.case_en_passant = None
-                                ej.enregistrer_position()
-                                ej.trait_aux_blancs = not ej.trait_aux_blancs
-                                joueur_actuel = 'w' if ej.trait_aux_blancs else 'b'
-                                if ej.est_echec_et_mat(joueur_actuel):
-                                    print(f"Echec et mat ! Les {'Blancs' if joueur_actuel == 'b' else 'Noirs'} ont gagné !")
-                                    etat = "FIN"
-                                    gagnant = 'Noirs' if joueur_actuel == 'w' else 'Blancs'
-                                elif ej.est_pat(joueur_actuel):
-                                    etat = "FIN"
-                                    gagnant = "Pat"
-                                elif ej.compteur_50_coups >= 100: # 50 coups pour chaque joueur sans déplacement de pion ni capture
-                                    etat = "FIN"
-                                    gagnant = "50 coups"
-                                elif ej.est_triple_repetition():
-                                    etat = "FIN"
-                                    gagnant = "Répétition"
-                                elif ej.est_manque_de_matériel(): # Vérifie les conditions de nulle par manque de matériel (roi contre roi, roi contre roi + fou ou roi contre roi + cavalier)
-                                    etat = "FIN"
-                                    gagnant = "Manque de matériel"
-                                if (piece_depart == "wp" and arr_ligne == 0) or (piece_depart == "bp" and arr_ligne == 7):
-                                    etat = "PROMOTION"
-                                    possibilites_promotion = (arr_ligne, arr_colonne)
-                                    couleur_promue = 'w' if piece_depart[0] == 'w' else 'b'
-                                if ej.simuler_mouvement_et_verifier_echec((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart[0]):
-                                    valide = False
-                                    print("Mouvement invalide : met le roi en échec")
+
+                                # --- 3. EXÉCUTION DU MOUVEMENT ---
                                 if piece_arrivee != "":
                                     soundeffect()
+                                    # Désactiver le roque si une tour est capturée
                                     if arr_ligne == 7 and arr_colonne == 0: ej.deplacement_tour_blanche_gauche = True
                                     if arr_ligne == 7 and arr_colonne == 7: ej.deplacement_tour_blanche_droite = True
                                     if arr_ligne == 0 and arr_colonne == 0: ej.deplacement_tour_noire_gauche = True
                                     if arr_ligne == 0 and arr_colonne == 7: ej.deplacement_tour_noire_droite = True
-                                est_capture = (piece_arrivee != "")
-                                est_pion = (piece_depart[1] == 'p')
-                                if est_capture or est_pion:
-                                    ej.compteur_50_coups = 0 # Réinitialise le compteur de 50 coups si une pièce a été capturée ou si un pion
+
+                                ej.plateau[arr_ligne][arr_colonne] = piece_depart
+                                ej.plateau[dep_ligne][dep_colonne] = ""
+
+                                # --- 4. GESTION DU PION (Promotion & En Passant) ---
+                                if piece_depart[1] == 'p':
+                                    # En passant (prise physique)
+                                    if (arr_ligne, arr_colonne) == ej.case_en_passant:
+                                        ej.plateau[dep_ligne][arr_colonne] = ""
+                                    
+                                    # Double pas (mise à jour de la cible en passant)
+                                    if abs(arr_ligne - dep_ligne) == 2:
+                                        ej.case_en_passant = ((dep_ligne + arr_ligne) // 2, dep_colonne)
+                                    else:
+                                        ej.case_en_passant = None
+                                    
+                                    # Promotion
+                                    if arr_ligne == 0 or arr_ligne == 7:
+                                        etat = "PROMOTION"
+                                        possibilites_promotion = (arr_ligne, arr_colonne)
+                                        couleur_promue = piece_depart[0]
                                 else:
-                                    ej.compteur_50_coups += 1 # Ajoute 1 au compteur de 50 coups si aucun pion n'a été déplacé et aucune pièce n'a été capturée
+                                    ej.case_en_passant = None
+
+                                # --- 5. FIN DU TOUR ---
+                                ej.enregistrer_position()
+                                ej.trait_aux_blancs = not ej.trait_aux_blancs
+                                ej.compteur_50_coups = 0 if (piece_depart[1] == 'p' or piece_arrivee != "") else ej.compteur_50_coups + 1
 
                     selection = ()
                     clics_joueur = []
