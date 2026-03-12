@@ -477,7 +477,7 @@ while encours :
         fenetre.blit(texte_message, rect_texte)
         couleur_tour = "Blancs" if ej.trait_aux_blancs else "Noirs"
         texte_tour = police_petite.render(f"Tour des {couleur_tour}", True, (255, 255, 255))
-        pygame.draw.rect(fenetre, (50, 50, 50), (5, 5, 120, 25))
+        pygame.draw.rect(fenetre, (50, 50, 50), (5, 5, 150, 25))
         fenetre.blit(texte_tour, (10, 8))
     if case_roi_en_echec:
         temps_ecoule = pygame.time.get_ticks() - debut_clignotement
