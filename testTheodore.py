@@ -119,6 +119,21 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                     valide = self.mouvement_valide_fou((ligne, colonne), (r, c)) or self.mouvement_valide_tour((ligne, colonne), (r, c))
                 elif type_p == 'K':
                     valide = self.mouvement_valide_roi((ligne, colonne), (r, c))
+                    is_roque = False
+                    if piece[0] == 'w' and ligne == 7 and colonne == 4:
+                        if r == 7 and (c == 6 or c == 2) and self.peut_roquer('w', 'petit' if c == 6 else 'grand'):
+                            valide = True
+                            is_roque = True
+                    elif piece[0] == 'b' and ligne == 0 and colonne == 4:
+                        if r == 0 and (c == 6 or c == 2) and self.peut_roquer('b', 'petit' if c == 6 else 'grand'):
+                            valide = True
+                            is_roque = True
+                            
+                    if valide:
+                        if not self.simuler_mouvement_et_verifier_echec((ligne, colonne), (r, c), piece[0]):
+                            if is_roque:
+                                mouvements.append((r, c, "roque"))
+                                continue
                     if piece[0] == 'w' and ligne == 7 and colonne == 4:
                         if r == 7 and c == 6 and self.peut_roquer('w', 'petit'): valide = True
                         if r == 7 and c == 2 and self.peut_roquer('w', 'grand'): valide = True
@@ -215,24 +230,43 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
         occurrences = self.historique_position.count(position_actuelle)
 
         return occurrences >= 3
-    def est_manque_de_matériel(self):
+    def est_manque_de_materiel(self):
         pieces_blanches = []
         pieces_noires = []
+        # On récupère toutes les pièces présentes et leurs coordonnées
         for ligne in range(8):
-            for colonne in range (8):
+            for colonne in range(8):
                 piece = self.plateau[ligne][colonne]
                 if piece != "":
+                    # On stocke (type_de_piece, ligne, colonne)
                     if piece[0] == 'w':
-                        pieces_blanches.append(piece[1])
+                        pieces_blanches.append((piece[1], ligne, colonne))
                     else:
-                        pieces_noires.append(piece[1])
-        if len(pieces_blanches) == 1 and len(pieces_noires) == 1:
-            return True # Roi contre roi
-        if len(pieces_blanches) <= 2 and len(pieces_noires) <= 2:
-            unique_blanc = [p for p in pieces_blanches if p != 'K']
-            unique_noir = [p for p in pieces_noires if p != 'K']
-            if (not unique_blanc and unique_noir in [['N'], ['B']]) or (not unique_noir and unique_blanc in [['N'], ['B']]):
-                return True # Roi contre roi + cavalier ou fou
+                        pieces_noires.append((piece[1], ligne, colonne))
+        nb_w = len(pieces_blanches)
+        nb_b = len(pieces_noires)
+        # 1. Roi contre Roi (wK vs bK)
+        if nb_w == 1 and nb_b == 1:
+            return True
+        # 2. Roi + Fou contre Roi
+        if (nb_w == 2 and nb_b == 1 and pieces_blanches[1][0] == 'B') or \
+           (nb_b == 2 and nb_w == 1 and pieces_noires[1][0] == 'B'):
+            return True
+        # 3. Roi + Cavalier contre Roi
+        if (nb_w == 2 and nb_b == 1 and pieces_blanches[1][0] == 'N') or \
+           (nb_b == 2 and nb_w == 1 and pieces_noires[1][0] == 'N'):
+            return True
+        # 4. Roi + Fou contre Roi + Fou (Fous de même couleur)
+        if nb_w == 2 and nb_b == 2:
+            p_w = [p for p in pieces_blanches if p[0] == 'B']
+            p_b = [p for p in pieces_noires if p[0] == 'B']
+            if len(p_w) == 1 and len(p_b) == 1:
+                # Vérification de la couleur de la case du fou (ligne + colonne) % 2
+                # Si (l+c)%2 est identique, ils sont sur la même couleur
+                couleur_fou_w = (p_w[0][1] + p_w[0][2]) % 2
+                couleur_fou_b = (p_b[0][1] + p_b[0][2]) % 2
+                if couleur_fou_w == couleur_fou_b:
+                    return True
         return False
     def peut_roquer(self, couleur, cote):
         ligne = 7 if couleur == 'w' else 0
@@ -431,6 +465,26 @@ while encours :
                     ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "N"
                     ej.trait_aux_blancs = not ej.trait_aux_blancs
                     etat = "JEU"
+            if etat == "JEU":
+                if event.key == pygame.K_a:
+                    etat = "CONFIRMATION_ABANDON"
+                if event.key == pygame.K_p:
+                    etat = "PROPOSITION_NULLE"
+
+            elif etat == "CONFIRMATION_ABANDON":
+                if event.key == pygame.K_o:
+                    couleur_vainqueur = "Noirs" if ej.trait_aux_blancs else "Blancs"
+                    gagnant = f"Abandon des {'Blancs' if ej.trait_aux_blancs else 'Noirs'}"
+                    etat = "FIN"
+                elif event.key == pygame.K_n:
+                    etat = "JEU"
+
+            elif etat == "PROPOSITION_NULLE":
+                if event.key == pygame.K_o: # O pour Oui (Accepter)
+                    gagnant = "Accord mutuel"
+                    etat = "FIN"
+                if event.key == pygame.K_n: # N pour Non (Refuser)
+                    etat = "JEU"
     if etat == "MENU":
         fenetre.fill((0,0,0))                                                     #met à jour l'ecran
         texte_bienvenue = police_titre.render("Bienvenue dans notre jeu d'échecs", True, (255, 255, 255))
@@ -460,12 +514,15 @@ while encours :
             ligne, colonne = selection
             possibles = ej.mouvements_valide(ligne, colonne)
             for m in possibles:
-                m_ligne, m_colonne, m_est_capture = m
-                if m_est_capture:
-                    couleur_point = (250, 50, 50)
+                m_ligne, m_colonne, type_mouv = m
+                if type_mouv == "roque":
+                    couleur_point = (148, 0, 211)
                     rayon = 15
-                else :
-                    couleur_point = (100, 100, 100)
+                elif type_mouv is True: # C'est une capture
+                    couleur_point = (250, 50, 50) # Rouge
+                    rayon = 15
+                else: # Mouvement normal
+                    couleur_point = (100, 100, 100) # Gris
                     rayon = 15
                 centre_x = m_colonne * 100 + 50
                 centre_y = m_ligne * 100 + 50
@@ -484,9 +541,11 @@ while encours :
             rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2))
             pygame.draw.rect(fenetre, (0, 0, 0), rect_echec.inflate(20, 20))
             fenetre.blit(texte_echec, rect_echec)
-        message = "ESC : Quitter | ENTREE : Menu"
+        elif ej.est_manque_de_materiel():
+            etat = "FIN"
+            gagnant = "Manque de matériel"
+        message = "ESC : Quitter | ENTREE : Menu | A : Abandonner | P : Nulle"
         texte_message = police_petite.render(message, True, (255, 255, 255))
-        
         rect_fond = pygame.Rect(0, HAUTEUR - 30, LARGEUR, 30)
         pygame.draw.rect(fenetre, GRIS_CLAIR, rect_fond)
         rect_texte = texte_message.get_rect(center=(LARGEUR//2, HAUTEUR - 15))
@@ -508,8 +567,6 @@ while encours :
         else: 
             case_roi_en_echec = None                                                           # Arrête le clignotement après 2 secondes
 
-    
-    
     elif etat == "PROMOTION":
         for ligne in range(8):
             for colonne in range (8):
@@ -533,15 +590,44 @@ while encours :
         for i, option in enumerate(options):                                                   # Affiche les options de promotion pour la pièce promue
             texte_option = police_petite.render(option, True, (255, 255, 255))                 # Affiche les options de promotion en blanc
             fenetre.blit(texte_option, (250, 320 + i * 40))                                    # Affiche les options de promotion dans la fenêtre
-
+    
+    elif etat == "CONFIRMATION_ABANDON":
+        voile = pygame.Surface((LARGEUR, HAUTEUR))
+        voile.set_alpha(160)
+        voile.fill((0, 0, 0))
+        fenetre.blit(voile, (0, 0))
+        texte = police_titre.render("Abandonner la partie ?", True, (255, 255, 255))
+        sous_texte = police_instruction.render("Appuyez sur O (Oui) ou N (Non)", True, (200, 200, 200))
+        fenetre.blit(texte, texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50)))
+        fenetre.blit(sous_texte, sous_texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 20)))
+    elif etat == "PROPOSITION_NULLE":
+        voile = pygame.Surface((LARGEUR, HAUTEUR))
+        voile.set_alpha(160)
+        voile.fill((0, 0, 0))
+        fenetre.blit(voile, (0, 0))
+        texte = police_titre.render("Accepter la nulle ?", True, (255, 255, 255))
+        sous_texte = police_instruction.render("Appuyez sur O (Oui) ou N (Non)", True, (200, 200, 200))
+        fenetre.blit(texte, texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50)))
+        fenetre.blit(sous_texte, sous_texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 20)))
     elif etat == "FIN":
-        voile = pygame.Surface((LARGEUR, HAUTEUR))                                             # Crée une surface pour le voile
-        voile.set_alpha(180)                                                                   # Transparence du voile
-        voile.fill((0,0,0))                                                                    # Couleur du voile (noir)
-        fenetre.blit(voile, (0, 0))                                                            # Affiche le voile sur la fenêtre  
+        voile = pygame.Surface((LARGEUR, HAUTEUR))
+        voile.set_alpha(180)
+        voile.fill((0,0,0))
+        fenetre.blit(voile, (0, 0))
         
-        couleur_titre = (200, 200, 200) # Attribue la couleur gris à la variable couleur_titre
+        couleur_titre = (200, 200, 200)
 
+        if "Abandon" in gagnant:
+            titre = "PARTIE ABANDONNÉE"
+            couleur_titre = (255, 100, 100) # Rouge un peu plus doux
+            # On extrait le vainqueur pour le sous-titre
+            vainqueur = "Blancs" if "Noirs" in gagnant else "Noirs"
+            sous_titre = f"Victoire des {vainqueur} par abandon"
+            
+        elif "Accord mutuel" in gagnant:
+            titre = "MATCH NUL !"
+            sous_titre = "Nulle par accord mutuel"
+            
         if "Pat" in gagnant:
             titre = "MATCH NUL !"
             sous_titre = "Match nul par pat !"
