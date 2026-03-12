@@ -466,8 +466,20 @@ while encours :
                     ej.trait_aux_blancs = not ej.trait_aux_blancs
                     etat = "JEU"
             if etat == "JEU":
+                nb_coups_faits = len(ej.historique_position)
                 if event.key == pygame.K_a:
-                    etat = "CONFIRMATION_ABANDON"
+                    if nb_coups_faits >= 20: 
+                        etat = "CONFIRMATION_ABANDON"
+                    else:
+                        print(f"Abandon bloqué : {nb_coups_faits}/20")
+                if event.key == pygame.K_p:
+                    if nb_coups_faits >= 20:
+                        etat = "PROPOSITION_NULLE"
+                    else:
+                        print(f"Nulle bloquée : {nb_coups_faits}/20")
+                if event.key == pygame.K_a:
+                    if len(ej.historique_position) >= 20: 
+                        etat = "CONFIRMATION_ABANDON"
                 if event.key == pygame.K_p:
                     etat = "PROPOSITION_NULLE"
 
@@ -544,12 +556,17 @@ while encours :
         elif ej.est_manque_de_materiel():
             etat = "FIN"
             gagnant = "Manque de matériel"
-        message = "ESC : Quitter | ENTREE : Menu | A : Abandonner | P : Nulle"
-        texte_message = police_petite.render(message, True, (255, 255, 255))
-        rect_fond = pygame.Rect(0, HAUTEUR - 30, LARGEUR, 30)
-        pygame.draw.rect(fenetre, GRIS_CLAIR, rect_fond)
-        rect_texte = texte_message.get_rect(center=(LARGEUR//2, HAUTEUR - 15))
-        fenetre.blit(texte_message, rect_texte)
+        nb_total = len(ej.historique_position)
+        if nb_total < 20:
+            manquant = 20 - nb_total
+            message = f"Options A/P bloquées - Encore {manquant} demi-coups"
+            couleur_barre = (200, 100, 100)
+        else:
+            message = "A : Abandonner | P : Proposer Nulle"
+            couleur_barre = (100, 200, 100)
+        pygame.draw.rect(fenetre, couleur_barre, (0, HAUTEUR - 30, LARGEUR, 30))
+        texte_msg = police_petite.render(message, True, (0, 0, 0))
+        fenetre.blit(texte_msg, texte_msg.get_rect(center=(LARGEUR//2, HAUTEUR - 15)))
         couleur_tour = "Blancs" if ej.trait_aux_blancs else "Noirs"
         texte_tour = police_petite.render(f"Tour des {couleur_tour}", True, (255, 255, 255))
         pygame.draw.rect(fenetre, (50, 50, 50), (5, 5, 150, 25))
@@ -627,7 +644,7 @@ while encours :
         elif "Accord mutuel" in gagnant:
             titre = "MATCH NUL !"
             sous_titre = "Nulle par accord mutuel"
-            
+
         if "Pat" in gagnant:
             titre = "MATCH NUL !"
             sous_titre = "Match nul par pat !"
