@@ -337,27 +337,34 @@ while encours :
                                 if ej.simuler_mouvement_et_verifier_echec((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart[0]):
                                     valide = False
                             if valide:
+                                # 1. GESTION DU ROQUE (On bouge la Tour AVANT le Roi)
                                 if piece_depart[1] == 'K' and abs(arr_colonne - dep_colonne) == 2:
                                     tour_ligne = arr_ligne
-                                    if arr_colonne == 6: # Petit roque : la tour passe de 7 à 5
+                                    if arr_colonne == 6: # Petit roque
                                         ej.plateau[tour_ligne][5] = ej.plateau[tour_ligne][7]
                                         ej.plateau[tour_ligne][7] = ""
-                                    elif arr_colonne == 2: # Grand roque : la tour passe de 0 à 3
+                                    elif arr_colonne == 2: # Grand roque
                                         ej.plateau[tour_ligne][3] = ej.plateau[tour_ligne][0]
                                         ej.plateau[tour_ligne][0] = ""
+                                # 2. MISE À JOUR DES DRAPEAUX (Pour interdire de roquer à nouveau)
                                 if piece_depart == "wK": ej.deplacement_roi_blanc = True
-                                if piece_depart == "bK": ej.deplacement_roi_noir = True
-                                if piece_depart == "wR":
+                                elif piece_depart == "bK": ej.deplacement_roi_noir = True
+                                elif piece_depart == "wR":
                                     if dep_colonne == 0: ej.deplacement_tour_blanche_gauche = True
-                                    if dep_colonne == 7: ej.deplacement_tour_blanche_droite = True
-                                if piece_depart == "bR":
+                                    elif dep_colonne == 7: ej.deplacement_tour_blanche_droite = True
+                                elif piece_depart == "bR":
                                     if dep_colonne == 0: ej.deplacement_tour_noire_gauche = True
-                                    if dep_colonne == 7: ej.deplacement_tour_noire_droite = True
+                                    elif dep_colonne == 7: ej.deplacement_tour_noire_droite = True
+                                # 3. GESTION DE LA PRISE EN PASSANT (Suppression du pion adverse)
+                                if piece_depart[1] == 'p' and (arr_ligne, arr_colonne) == ej.case_en_passant:
+                                    ej.plateau[dep_ligne][arr_colonne] = ""
+                                # 4. MOUVEMENT PHYSIQUE DU ROI (OU DE LA PIÈCE SÉLECTIONNÉE)
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
-                                if piece_depart[1] == 'p' and abs(arr_ligne - dep_colonne) == 2:
+                                # 5. MISE À JOUR DE LA CASE EN PASSANT (Pour le prochain tour)
+                                if piece_depart[1] == 'p' and abs(arr_ligne - dep_ligne) == 2:
                                     ej.case_en_passant = ((dep_ligne + arr_ligne) // 2, dep_colonne)
-                                else :
+                                else:
                                     ej.case_en_passant = None
                                 ej.enregistrer_position()
                                 ej.trait_aux_blancs = not ej.trait_aux_blancs
@@ -387,6 +394,10 @@ while encours :
                                     print("Mouvement invalide : met le roi en échec")
                                 if piece_arrivee != "":
                                     soundeffect()
+                                    if arr_ligne == 7 and arr_colonne == 0: ej.deplacement_tour_blanche_gauche = True
+                                    if arr_ligne == 7 and arr_colonne == 7: ej.deplacement_tour_blanche_droite = True
+                                    if arr_ligne == 0 and arr_colonne == 0: ej.deplacement_tour_noire_gauche = True
+                                    if arr_ligne == 0 and arr_colonne == 7: ej.deplacement_tour_noire_droite = True
                                 est_capture = (piece_arrivee != "")
                                 est_pion = (piece_depart[1] == 'p')
                                 if est_capture or est_pion:
