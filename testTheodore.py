@@ -472,7 +472,7 @@ while encours :
                         etat = "CONFIRMATION_ABANDON"
                     else:
                         print(f"Abandon bloqué : {nb_coups_faits}/20")
-                if event.key == pygame.K_p:
+                elif event.key == pygame.K_p:
                     if nb_coups_faits >= 20:
                         etat = "PROPOSITION_NULLE"
                     else:
