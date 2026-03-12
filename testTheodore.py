@@ -119,6 +119,12 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                     valide = self.mouvement_valide_fou((ligne, colonne), (r, c)) or self.mouvement_valide_tour((ligne, colonne), (r, c))
                 elif type_p == 'K':
                     valide = self.mouvement_valide_roi((ligne, colonne), (r, c))
+                    if piece[0] == 'w' and ligne == 7 and colonne == 4:
+                        if r == 7 and c == 6 and self.peut_roquer('w', 'petit'): valide = True
+                        if r == 7 and c == 2 and self.peut_roquer('w', 'grand'): valide = True
+                    elif piece[0] == 'b' and ligne == 0 and colonne == 4:
+                        if r == 0 and c == 6 and self.peut_roquer('b', 'petit'): valide = True
+                        if r == 0 and c == 2 and self.peut_roquer('b', 'grand'): valide = True
                 if valide:
                     couleur_joueur = piece[0]
                     if not self.simuler_mouvement_et_verifier_echec((ligne, colonne), (r, c), couleur_joueur):
@@ -231,16 +237,20 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
     def peut_roquer(self, couleur, cote):
         ligne = 7 if couleur == 'w' else 0
         if self.est_en_echec(couleur): return False
+        
         if cote == "petit":
             deja_bouge = self.deplacement_roi_blanc or self.deplacement_tour_blanche_droite if couleur == 'w' else self.deplacement_roi_noir or self.deplacement_tour_noire_droite
             if not deja_bouge and self.plateau[ligne][5] == "" and self.plateau[ligne][6] == "":
-                return not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 5), couleur) and not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 6), couleur)
+                # Vérifie que les cases de passage ne sont pas attaquées
+                return not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 5), couleur) and \
+                       not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 6), couleur)
         elif cote == "grand":
             deja_bouge = self.deplacement_roi_blanc or self.deplacement_tour_blanche_gauche if couleur == 'w' else self.deplacement_roi_noir or self.deplacement_tour_noire_gauche
             if not deja_bouge and self.plateau[ligne][1] == "" and self.plateau[ligne][2] == "" and self.plateau[ligne][3] == "":
-                return not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 3), couleur) and self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 2), couleur)
+                # Vérifie cases 2 et 3 (le Roi finit en 2, passe par 3)
+                return not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 3), couleur) and \
+                       not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 2), couleur)
         return False
-
 #Initialisation de pygame 
 
 pygame.init()                                                                   # demarre tous les modules pygame
@@ -327,8 +337,22 @@ while encours :
                                 if ej.simuler_mouvement_et_verifier_echec((dep_ligne, dep_colonne), (arr_ligne, arr_colonne), piece_depart[0]):
                                     valide = False
                             if valide:
-                                if piece_depart[1] == 'p' and (arr_ligne, arr_colonne) == ej.case_en_passant:
-                                    ej.plateau[dep_ligne][arr_colonne] = ""
+                                if piece_depart[1] == 'K' and abs(arr_colonne - dep_colonne) == 2:
+                                    tour_ligne = arr_ligne
+                                    if arr_colonne == 6: # Petit roque : la tour passe de 7 à 5
+                                        ej.plateau[tour_ligne][5] = ej.plateau[tour_ligne][7]
+                                        ej.plateau[tour_ligne][7] = ""
+                                    elif arr_colonne == 2: # Grand roque : la tour passe de 0 à 3
+                                        ej.plateau[tour_ligne][3] = ej.plateau[tour_ligne][0]
+                                        ej.plateau[tour_ligne][0] = ""
+                                if piece_depart == "wK": ej.deplacement_roi_blanc = True
+                                if piece_depart == "bK": ej.deplacement_roi_noir = True
+                                if piece_depart == "wR":
+                                    if dep_colonne == 0: ej.deplacement_tour_blanche_gauche = True
+                                    if dep_colonne == 7: ej.deplacement_tour_blanche_droite = True
+                                if piece_depart == "bR":
+                                    if dep_colonne == 0: ej.deplacement_tour_noire_gauche = True
+                                    if dep_colonne == 7: ej.deplacement_tour_noire_droite = True
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
                                 if piece_depart[1] == 'p' and abs(arr_ligne - dep_colonne) == 2:
