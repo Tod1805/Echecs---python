@@ -480,8 +480,6 @@ while encours :
                 if event.key == pygame.K_a:
                     if len(ej.historique_position) >= 20: 
                         etat = "CONFIRMATION_ABANDON"
-                if event.key == pygame.K_p:
-                    etat = "PROPOSITION_NULLE"
 
             elif etat == "CONFIRMATION_ABANDON":
                 if event.key == pygame.K_o:
