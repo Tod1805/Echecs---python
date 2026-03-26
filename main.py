@@ -316,7 +316,6 @@ police_petite = pygame.font.SysFont("Arial", 18, bold=True)
 # Couleurs
 BLANC = (255, 255, 255)
 GRIS_CLAIR = (200, 200, 200)
-
 NOIR = (0, 0, 0)
 
 taille_case = LARGEUR  // 8
@@ -348,7 +347,7 @@ while encours :
                     piece_depart = ej.plateau[dep_ligne][dep_colonne]
                     piece_arrivee = ej.plateau[arr_ligne][arr_colonne]
 
-                    if piece_depart !="":
+                    if piece_depart != "":
                         tour_correct = (ej.trait_aux_blancs and piece_depart[0] == 'w') or (not ej.trait_aux_blancs and piece_depart[0] == 'b')
                         if tour_correct:
                             # On récupère tous les mouvements valides pour cette pièce
