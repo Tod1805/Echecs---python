@@ -334,12 +334,13 @@ while encours :
                 pos = pygame.mouse.get_pos()
                 colonne = pos[0] // 100
                 ligne = pos[1] // 100
-                if selection == (ligne, colonne):
-                    selection = ()
-                    clics_joueur = []
-                else:
-                    selection = (ligne, colonne)
-                    clics_joueur.append(selection)
+                if ligne < 8 and colonne < 8 :
+                    if selection == (ligne, colonne):
+                        selection = ()
+                        clics_joueur = []
+                    else:
+                        selection = (ligne, colonne)
+                        clics_joueur.append(selection)
                 if len(clics_joueur) == 2:
                     dep_ligne, dep_colonne = clics_joueur[0]
                     arr_ligne, arr_colonne = clics_joueur[1]
