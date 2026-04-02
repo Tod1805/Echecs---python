@@ -28,10 +28,12 @@ message_erreur = ""
 debut_message_erreur = 0
 encours = True                                                                  #controle de la boucle principal du jeu                                               
 etat = "MENU"
+etat_jeu = None
 gagnant = ""
 historique_positions = []
 debut_clignotement = 0
 case_roi_en_echec = None
+debut_partie = True
 
 # Définition des polices
 police_titre = pygame.font.SysFont("Verdana", 35, bold=True)
@@ -134,13 +136,14 @@ while encours :
                                     
                                     # Promotion
                                     if arr_ligne == 0 or arr_ligne == 7:
-                                        etat = "PROMOTION"
+                                        etat_jeu = "PROMOTION"
                                         possibilites_promotion = (arr_ligne, arr_colonne)
                                         couleur_promue = piece_depart[0]
                                 else:
                                     ej.case_en_passant = None
 
                                 # --- 5. FIN DU TOUR ---
+                                debut_partie = False
                                 ej.enregistrer_position()
                                 ej.trait_aux_blancs = not ej.trait_aux_blancs
                                 ej.compteur_50_coups = 0 if (piece_depart[1] == 'p' or piece_arrivee != "") else ej.compteur_50_coups + 1
@@ -173,7 +176,7 @@ while encours :
                 if etat == "JEU":
                     etat = "FIN"
                     pygame.mixer.fadeout(10000)                                    # Fondu de 10 secondes pour la musique de fond
-            if etat == "PROMOTION":
+            if etat_jeu == "PROMOTION":
                 if event.key == pygame.K_q:
                     ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "Q"
                     ej.trait_aux_blancs = not ej.trait_aux_blancs
@@ -194,19 +197,19 @@ while encours :
                 nb_coups_faits = len(ej.historique_position)
                 if event.key == pygame.K_a:
                     if nb_coups_faits >= 20: 
-                        etat = "CONFIRMATION_ABANDON"
+                        etat_jeu = "CONFIRMATION_ABANDON"
                     else:
                         print(f"Abandon bloqué : {nb_coups_faits}/20")
                 elif event.key == pygame.K_p:
                     if nb_coups_faits >= 20:
-                        etat = "PROPOSITION_NULLE"
+                        etat_jeu = "PROPOSITION_NULLE"
                     else:
                         print(f"Nulle bloquée : {nb_coups_faits}/20")
                 if event.key == pygame.K_a:
                     if len(ej.historique_position) >= 20: 
-                        etat = "CONFIRMATION_ABANDON"
+                        etat_jeu = "CONFIRMATION_ABANDON"
 
-            elif etat == "CONFIRMATION_ABANDON":
+            elif etat_jeu == "CONFIRMATION_ABANDON":
                 if event.key == pygame.K_o:
                     couleur_vainqueur = "Noirs" if ej.trait_aux_blancs else "Blancs"
                     gagnant = f"Abandon des {'Blancs' if ej.trait_aux_blancs else 'Noirs'}"
@@ -214,7 +217,7 @@ while encours :
                 elif event.key == pygame.K_n:
                     etat = "JEU"
 
-            elif etat == "PROPOSITION_NULLE":
+            elif etat_jeu == "PROPOSITION_NULLE":
                 if event.key == pygame.K_o: # O pour Oui (Accepter)
                     gagnant = "Accord mutuel"
                     etat = "FIN"
@@ -245,23 +248,31 @@ while encours :
                     x = (colonne * 100) + 5
                     y = (ligne * 100) + 5
                     fenetre.blit(IMAGES[piece], (x, y))
+
+        if debut_partie:
+            texte_debut = police_titre.render("AUX BLANCS DE JOUER", True, (255, 255, 255))
+            rect_debut = texte_debut.get_rect(center=(LARGEUR//2, HAUTEUR//2))
+            pygame.draw.rect(fenetre, (0, 0, 0), rect_debut.inflate(20, 20))
+            fenetre.blit(texte_debut, rect_debut)
+
         if selection != ():
             ligne, colonne = selection
-            possibles = ej.mouvements_valide(ligne, colonne)
-            for m in possibles:
-                m_ligne, m_colonne, type_mouv = m
-                if type_mouv == "roque":
-                    couleur_point = (148, 0, 211)
-                    rayon = 15
-                elif type_mouv is True: # C'est une capture
-                    couleur_point = (250, 50, 50) # Rouge
-                    rayon = 15
-                else: # Mouvement normal
-                    couleur_point = (100, 100, 100) # Gris
-                    rayon = 15
-                centre_x = m_colonne * 100 + 50
-                centre_y = m_ligne * 100 + 50
-                pygame.draw.circle(fenetre, couleur_point, (centre_x, centre_y), rayon)
+            piece_cliquee = ej.plateau[ligne][colonne]
+            tour_joueur = 'w' if ej.trait_aux_blancs else 'b'
+            
+            if piece_cliquee != "" and piece_cliquee[0] == tour_joueur:
+                possibles = ej.mouvements_valide(ligne, colonne)
+                for m in possibles:
+                    m_ligne, m_colonne, type_mouv = m
+                    if type_mouv == "roque":
+                        couleur_point = (148, 0, 211)
+                    elif type_mouv is True:
+                        couleur_point = (250, 50, 50)
+                    else:
+                        couleur_point = (100, 100, 100)
+                    centre_x = m_colonne * 100 + 50
+                    centre_y = m_ligne * 100 + 50
+                    pygame.draw.circle(fenetre, couleur_point, (centre_x, centre_y), 15)
         couleur_actuelle = "w" if ej.trait_aux_blancs else "b"
         if ej.est_echec_et_mat(couleur_actuelle):
             etat = "FIN"
@@ -307,7 +318,7 @@ while encours :
         else: 
             case_roi_en_echec = None                                                           # Arrête le clignotement après 2 secondes
 
-    elif etat == "PROMOTION":
+    elif etat_jeu == "PROMOTION":
         for ligne in range(8):
             for colonne in range (8):
                 couleur = NOIR if (ligne + colonne) % 2 == 0 else BLANC
@@ -331,7 +342,7 @@ while encours :
             texte_option = police_petite.render(option, True, (255, 255, 255))                 # Affiche les options de promotion en blanc
             fenetre.blit(texte_option, (250, 320 + i * 40))                                    # Affiche les options de promotion dans la fenêtre
     
-    elif etat == "CONFIRMATION_ABANDON":
+    elif etat_jeu == "CONFIRMATION_ABANDON":
         voile = pygame.Surface((LARGEUR, HAUTEUR))
         voile.set_alpha(160)
         voile.fill((0, 0, 0))
@@ -340,7 +351,7 @@ while encours :
         sous_texte = police_instruction.render("Appuyez sur O (Oui) ou N (Non)", True, (200, 200, 200))
         fenetre.blit(texte, texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50)))
         fenetre.blit(sous_texte, sous_texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 20)))
-    elif etat == "PROPOSITION_NULLE":
+    elif etat_jeu == "PROPOSITION_NULLE":
         voile = pygame.Surface((LARGEUR, HAUTEUR))
         voile.set_alpha(160)
         voile.fill((0, 0, 0))
