@@ -158,71 +158,57 @@ while encours :
                             if ej.plateau[r][c] == couleur_suivante + "K":
                                 case_roi_en_echec = (r, c)
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                if etat == "MENU":
+            # --- 1. PRIORITÉ ABSOLUE : LES MENUS DE CONFIRMATION ---
+            # Si on attend une réponse O/N, on ne regarde RIEN d'autre
+            if etat_jeu == "CONFIRMATION_ABANDON":
+                if event.key == pygame.K_o:
+                    gagnant = f"Abandon des {'Blancs' if ej.trait_aux_blancs else 'Noirs'}"
+                    etat = "FIN"
+                    etat_jeu = None  # On ferme le menu
+                elif event.key == pygame.K_n:
+                    etat_jeu = None  # On annule et on revient au jeu
+                continue # On passe directement à l'évenement suivant
+
+            elif etat_jeu == "PROPOSITION_NULLE":
+                if event.key == pygame.K_o:
+                    gagnant = "Accord mutuel"
+                    etat = "FIN"
+                    etat_jeu = None
+                elif event.key == pygame.K_n:
+                    etat_jeu = None
+                continue
+
+            # --- 2. GESTION DES AUTRES ÉTATS ---
+            if etat == "MENU":
+                if event.key == pygame.K_SPACE:
                     etat = "JEU"
                     soundbackground_tod()
-            if event.key == pygame.K_RETURN:
-                if etat == "JEU":
+
+            elif etat == "JEU":
+                # On ne vérifie A et P que si aucun menu n'est ouvert
+                if etat_jeu is None:
+                    nb_coups = len(ej.historique_position)
+                    if event.key == pygame.K_a:
+                        if nb_coups >= 20: 
+                            etat_jeu = "CONFIRMATION_ABANDON"
+                    elif event.key == pygame.K_p:
+                        if nb_coups >= 20: 
+                            etat_jeu = "PROPOSITION_NULLE"
+                
+                # Touches de navigation toujours actives en jeu
+                if event.key == pygame.K_RETURN:
                     etat = "MENU"
                     pygame.mixer.stop()
-            if etat == "FIN":
+                elif event.key == pygame.K_ESCAPE:
+                    etat = "FIN"
+
+            elif etat == "FIN":
                 if event.key == pygame.K_r:
                     ej = EtatDeJeu()
                     etat = "MENU"
-                if event.key == pygame.K_q:
+                    debut_partie = True
+                elif event.key == pygame.K_q:
                     encours = False
-            if event.key == pygame.K_ESCAPE:
-                if etat == "JEU":
-                    etat = "FIN"
-                    pygame.mixer.fadeout(10000)                                    # Fondu de 10 secondes pour la musique de fond
-            if etat_jeu == "PROMOTION":
-                if event.key == pygame.K_q:
-                    ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "Q"
-                    ej.trait_aux_blancs = not ej.trait_aux_blancs
-                    etat = "JEU"
-                elif event.key == pygame.K_r:
-                    ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "R"
-                    ej.trait_aux_blancs = not ej.trait_aux_blancs
-                    etat = "JEU"
-                elif event.key == pygame.K_b:
-                    ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "B"
-                    ej.trait_aux_blancs = not ej.trait_aux_blancs
-                    etat = "JEU"
-                elif event.key == pygame.K_n:
-                    ej.plateau[possibilites_promotion[0]][possibilites_promotion[1]] = couleur_promue + "N"
-                    ej.trait_aux_blancs = not ej.trait_aux_blancs
-                    etat = "JEU"
-            if etat == "JEU":
-                nb_coups_faits = len(ej.historique_position)
-                if event.key == pygame.K_a:
-                    if nb_coups_faits >= 20: 
-                        etat_jeu = "CONFIRMATION_ABANDON"
-                    else:
-                        print(f"Abandon bloqué : {nb_coups_faits}/20")
-                elif event.key == pygame.K_p:
-                    if nb_coups_faits >= 20:
-                        etat_jeu = "PROPOSITION_NULLE"
-                    else:
-                        print(f"Nulle bloquée : {nb_coups_faits}/20")
-                if event.key == pygame.K_a:
-                    if len(ej.historique_position) >= 20: 
-                        etat_jeu = "CONFIRMATION_ABANDON"
-
-            elif etat_jeu == "CONFIRMATION_ABANDON":
-                if event.key == pygame.K_o:
-                    couleur_vainqueur = "Noirs" if ej.trait_aux_blancs else "Blancs"
-                    gagnant = f"Abandon des {'Blancs' if ej.trait_aux_blancs else 'Noirs'}"
-                    etat = "FIN"
-                elif event.key == pygame.K_n:
-                    etat = "JEU"
-
-            elif etat_jeu == "PROPOSITION_NULLE":
-                if event.key == pygame.K_o: # O pour Oui (Accepter)
-                    gagnant = "Accord mutuel"
-                    etat = "FIN"
-                if event.key == pygame.K_n: # N pour Non (Refuser)
-                    etat = "JEU"
     if etat == "MENU":
         fenetre.fill((0,0,0))                                                     #met à jour l'ecran
         texte_bienvenue = police_titre.render("Bienvenue dans notre jeu d'échecs", True, (255, 255, 255))
@@ -293,10 +279,10 @@ while encours :
         nb_total = len(ej.historique_position)
         if nb_total < 20:
             manquant = 20 - nb_total
-            message = f"Options A/P bloquées - Encore {manquant} demi-coups"
+            message = f"ESC pour quitter | Options A/P bloquées - Encore {manquant} demi-coups"
             couleur_barre = (200, 100, 100)
         else:
-            message = "A : Abandonner | P : Proposer Nulle"
+            message = "ESC pour quitter | A : Abandonner | P : Proposer Nulle"
             couleur_barre = (100, 200, 100)
         pygame.draw.rect(fenetre, couleur_barre, (0, HAUTEUR - 30, LARGEUR, 30))
         texte_msg = police_petite.render(message, True, (0, 0, 0))
