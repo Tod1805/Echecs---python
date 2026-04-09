@@ -37,6 +37,8 @@ case_roi_en_echec = None
 debut_partie = True
 message_bloque = ""
 debut_timer_bloque = 0
+titre = ""
+sous_titre = ""
 
 # Définition des polices
 police_titre = pygame.font.SysFont("Verdana", 35, bold=True)
@@ -199,6 +201,25 @@ while encours :
                 elif event.key == pygame.K_n:
                     etat_jeu = None
                 continue
+                
+            elif etat_jeu == "PROMOTION":
+                r, c = possibilites_promotion
+                touche_valide = True
+                
+                if event.key == pygame.K_q:    # Dame
+                    ej.plateau[r][c] = couleur_promue + "Q"
+                elif event.key == pygame.K_r:  # Tour
+                    ej.plateau[r][c] = couleur_promue + "R"
+                elif event.key == pygame.K_b:  # Fou (Bishop)
+                    ej.plateau[r][c] = couleur_promue + "B"
+                elif event.key == pygame.K_n:  # Cavalier (kNight)
+                    ej.plateau[r][c] = couleur_promue + "N"
+                else:
+                    touche_valide = False
+                
+                if touche_valide:
+                    etat_jeu = None # On ferme le menu de promotion et on reprend le jeu
+                continue # On ne traite pas les autres touches (A, P, ESC) pendant la promotion
 
             # --- 2. GESTION DES AUTRES ÉTATS ---
             if etat == "MENU":
@@ -259,7 +280,7 @@ while encours :
 
         if debut_partie:
             texte_debut = police_titre.render("AUX BLANCS DE JOUER", True, (255, 255, 255))
-            rect_debut = texte_debut.get_rect(center=(LARGEUR//2, HAUTEUR//2))
+            rect_debut = texte_debut.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 15))
             pygame.draw.rect(fenetre, (0, 0, 0), rect_debut.inflate(20, 20))
             fenetre.blit(texte_debut, rect_debut)
 
@@ -292,7 +313,7 @@ while encours :
             pygame.mixer.fadeout(10000)                                                                           # Fondu de 10 secondes pour la musique de fond
         elif ej.est_en_echec(couleur_actuelle):
             texte_echec = police_titre.render("Échec au roi " + ("Blanc" if couleur_actuelle == 'w' else "Noir"), True, (255, 50, 50))
-            rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2))
+            rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 15))
             pygame.draw.rect(fenetre, (0, 0, 0), rect_echec.inflate(20, 20))
             fenetre.blit(texte_echec, rect_echec)
         elif ej.est_manque_de_materiel():
