@@ -348,18 +348,6 @@ while encours :
             case_roi_en_echec = None                                                           # Arrête le clignotement après 2 secondes
 
     elif etat_jeu == "PROMOTION":
-        for ligne in range(8):
-            for colonne in range (8):
-                couleur = NOIR if (ligne + colonne) % 2 == 0 else BLANC
-                pygame.draw.rect(fenetre, couleur, pygame.Rect(colonne * taille_case, ligne * taille_case, taille_case, taille_case))
-        
-        for ligne in range(8):
-            for colonne in range(8):
-                piece = ej.plateau[ligne][colonne]
-                if piece != "":
-                    x = (colonne * 100) + 5
-                    y = (ligne * 100) + 5
-                    fenetre.blit(IMAGES[piece], (x, y))
     
         overlay = pygame.Surface((400, 200))                                                   # Crée une surface pour l'overlay de promotion
         overlay.set_alpha(220)                                                                 # Transparence de l'overlay
@@ -392,7 +380,7 @@ while encours :
     elif etat == "FIN":
         voile = pygame.Surface((LARGEUR, HAUTEUR))
         voile.set_alpha(180)
-        voile.fill((0,0,0))
+        voile.fill((25,25,25))
         fenetre.blit(voile, (0, 0))
         
         couleur_titre = (200, 200, 200)
