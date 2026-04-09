@@ -1,0 +1,274 @@
+class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris le plateau, le trait aux blancs, le compteur de 50 coups et l'historique des positions
+    def __init__(self): # Initialise l'état du jeu avec le plateau de départ, le trait aux blancs, le compteur de 50 coups et l'historique des positions
+        self.plateau = [ # Le plateau de jeu est représenté par une liste de listes, où chaque élément est une chaîne de caractères représentant la pièce présente sur la case ou une chaîne vide pour les cases vides
+            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"], # Les pièces noires sont représentées par des chaînes de caractères commençant par 'b' et les pièces blanches par des chaînes commençant par 'w'
+            ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"], # Les pions sont représentés par 'p', les tours par 'R', les cavaliers par 'N', les fous par 'B', la dame par 'Q' et le roi par 'K'
+            ["", "", "", "", "", "", "", ""],# Les cases vides sont représentées par des chaînes de caractères vides
+            ["", "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", ""],
+            ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"], # Les pièces blanches sont représentées par des chaînes de caractères commençant par 'w' et les pièces noires par des chaînes commençant par 'b'
+            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],# Les pions sont représentés par 'p', les tours par 'R', les cavaliers par 'N', les fous par 'B', la dame par 'Q' et le roi par 'K'
+        ]
+        self.trait_aux_blancs = True # True si c'est au tour des blancs, False pour les noirs
+        self.compteur_50_coups = 0 # Compteur pour la règle des 50 coups
+        self.historique_position = [] # Historique des mouvements pour la nulle par répétition
+        self.case_en_passant = None
+        self.deplacement_roi_blanc = False
+        self.deplacement_roi_noir = False
+        self.deplacement_tour_blanche_gauche = False
+        self.deplacement_tour_blanche_droite = False
+        self.deplacement_tour_noire_gauche = False
+        self.deplacement_tour_noire_droite = False
+    def mouvement_valide_pion(self, dep, arr, piece):
+        dep_ligne, dep_colonne = dep
+        arr_ligne, arr_colonne = arr
+        direction = - 1 if piece[0] == 'w' else 1
+        if (arr_ligne, arr_colonne) == self.case_en_passant:
+            if abs(arr_colonne - dep_colonne) == 1 and arr_ligne == dep_ligne + direction:
+                return True
+        if dep_colonne == arr_colonne and arr_ligne == dep_ligne + direction and self.plateau[arr_ligne][arr_colonne] == "":
+            return True
+        pion_depart = (piece == 'wp' and dep_ligne == 6) or (piece == 'bp' and dep_ligne == 1)
+        if pion_depart and dep_colonne == arr_colonne and arr_ligne == dep_ligne + 2 * direction and self.plateau[dep_ligne + direction][dep_colonne] == "" and self.plateau[arr_ligne][arr_colonne] == "":
+            return True
+        if abs(dep_colonne - arr_colonne) == 1 and arr_ligne == dep_ligne + direction and self.plateau[arr_ligne][arr_colonne] != "" and self.plateau[arr_ligne][arr_colonne][0] != piece[0]:
+            return True
+        if (arr_ligne, arr_colonne) == self.case_en_passant:
+            if abs(arr_colonne - dep_colonne) == 1 and arr_ligne == dep_ligne + direction:
+                return True
+        return False
+    def mouvement_valide_cavalier(self, dep, arr):
+        dep_ligne, dep_colonne = dep
+        arr_ligne, arr_colonne = arr
+        diff_ligne = abs(arr_ligne - dep_ligne)
+        diff_colonne = abs(arr_colonne - dep_colonne)
+        return (diff_ligne == 2 and diff_colonne == 1) or (diff_ligne == 1 and diff_colonne == 2)
+    def mouvement_valide_fou(self, dep, arr):
+        dep_ligne, dep_colonne = dep
+        arr_ligne, arr_colonne = arr
+        if abs(arr_ligne - dep_ligne) == abs(arr_colonne - dep_colonne):
+            return self.chemin_libre(dep, arr)
+        return False
+    def chemin_libre(self, dep, arr):
+        d_ligne = 0 if arr[0] == dep[0] else (1 if arr[0] > dep[0] else -1)
+        d_colonne = 0 if arr[1] == dep[1] else (1 if arr[1] > dep[1] else -1)
+        current_ligne, current_colonne = dep[0] + d_ligne, dep[1] + d_colonne
+        while (current_ligne, current_colonne) != (arr[0], arr[1]):
+            if self.plateau[current_ligne][current_colonne] != "":
+                return False
+            current_ligne += d_ligne
+            current_colonne += d_colonne
+        return True
+    def mouvement_valide_tour(self, dep, arr):
+        dep_ligne, dep_colonne = dep
+        arr_ligne, arr_colonne = arr
+        if dep_ligne == arr_ligne or dep_colonne == arr_colonne:
+            return self.chemin_libre(dep, arr)
+        return False
+    def simuler_mouvement_et_verifier_echec(self, dep, arr, couleur):
+        piece_depart = self.plateau[dep[0]][dep[1]]
+        piece_arrivee = self.plateau[arr[0]][arr[1]]
+        self.plateau[arr[0]][arr[1]] = piece_depart
+        self.plateau[dep[0]][dep[1]] = ""
+        en_echec = self.est_en_echec(couleur)
+        self.plateau[dep[0]][dep[1]] = piece_depart
+        self.plateau[arr[0]][arr[1]] = piece_arrivee
+        return en_echec
+    def mouvement_valide_roi(self, dep, arr):
+        dep_ligne, dep_colonne = dep
+        arr_ligne, arr_colonne = arr
+        
+        diff_ligne = abs(arr_ligne - dep_ligne)
+        diff_colonne = abs(arr_colonne - dep_colonne)
+        return diff_ligne <= 1 and diff_colonne <= 1
+    def mouvements_valide(self, ligne, colonne):
+        mouvements = []
+        piece = self.plateau[ligne][colonne]
+        if piece == "":
+            return mouvements
+        for r in range(8):
+            for c in range(8):
+                valide = False
+                piece_destination = self.plateau[r][c]
+                if piece_destination != "" and piece_destination[0] == piece[0]:
+                    continue
+                type_p = piece[1]
+                if type_p == 'p':
+                    valide = self.mouvement_valide_pion((ligne, colonne), (r, c), piece)
+                elif type_p == 'N':
+                    valide = self.mouvement_valide_cavalier((ligne, colonne), (r, c))
+                elif type_p == 'B':           
+                    valide = self.mouvement_valide_fou((ligne, colonne), (r, c))
+                elif type_p == 'R':
+                    valide = self.mouvement_valide_tour((ligne, colonne), (r, c))
+                elif type_p == 'Q':
+                    valide = self.mouvement_valide_fou((ligne, colonne), (r, c)) or self.mouvement_valide_tour((ligne, colonne), (r, c))
+                elif type_p == 'K':
+                    valide = self.mouvement_valide_roi((ligne, colonne), (r, c))
+                    is_roque = False
+                    if piece[0] == 'w' and ligne == 7 and colonne == 4:
+                        if r == 7 and (c == 6 or c == 2) and self.peut_roquer('w', 'petit' if c == 6 else 'grand'):
+                            valide = True
+                            is_roque = True
+                    elif piece[0] == 'b' and ligne == 0 and colonne == 4:
+                        if r == 0 and (c == 6 or c == 2) and self.peut_roquer('b', 'petit' if c == 6 else 'grand'):
+                            valide = True
+                            is_roque = True
+                            
+                    if valide:
+                        if not self.simuler_mouvement_et_verifier_echec((ligne, colonne), (r, c), piece[0]):
+                            if is_roque:
+                                mouvements.append((r, c, "roque"))
+                                continue
+                    if piece[0] == 'w' and ligne == 7 and colonne == 4:
+                        if r == 7 and c == 6 and self.peut_roquer('w', 'petit'): valide = True
+                        if r == 7 and c == 2 and self.peut_roquer('w', 'grand'): valide = True
+                    elif piece[0] == 'b' and ligne == 0 and colonne == 4:
+                        if r == 0 and c == 6 and self.peut_roquer('b', 'petit'): valide = True
+                        if r == 0 and c == 2 and self.peut_roquer('b', 'grand'): valide = True
+                if valide:
+                    couleur_joueur = piece[0]
+                    if not self.simuler_mouvement_et_verifier_echec((ligne, colonne), (r, c), couleur_joueur):
+                        est_capture_standard = self.plateau[r][c] != ""
+                        est_en_passant = (piece[1] == 'p' and (r, c) == self.case_en_passant)
+                        if est_capture_standard or est_en_passant:
+                            mouvements.append((r, c, True))
+                        else :
+                            mouvements.append((r, c, False))             
+        return mouvements
+    def est_en_echec(self, couleur_roi):
+        roi_position = None
+        chercher = couleur_roi + "K"
+        for r in range(8):
+            for c in range(8):
+                if self.plateau[r][c] == chercher:
+                    roi_position = (r, c)
+                    break
+            if roi_position:
+                break
+        if not roi_position:
+            return False
+        couleur_ennemie = 'b' if couleur_roi == 'w' else 'w'
+        for r in range(8):
+            for c in range(8):
+                piece = self.plateau[r][c]
+                if piece != "" and piece[0] == couleur_ennemie:
+                    mouvements_possibles = self.get_mouvements_physiques(r, c)
+                    if roi_position in mouvements_possibles:
+                        return True
+        return False
+    def get_mouvements_physiques(self, ligne, colonne):
+        mouvements = []
+        piece = self.plateau[ligne][colonne]
+        if piece == "":
+            return mouvements
+        for r in range(8):
+            for c in range(8):
+                valide = False
+                piece_destination = self.plateau[r][c]
+                if piece_destination != "" and piece_destination[0] == piece[0]:
+                    continue
+                type_p = piece[1]
+                if type_p == 'p':
+                    valide = self.mouvement_valide_pion((ligne, colonne), (r, c), piece)
+                elif type_p == 'N':
+                    valide = self.mouvement_valide_cavalier((ligne, colonne), (r, c))
+                elif type_p == 'B':           
+                    valide = self.mouvement_valide_fou((ligne, colonne), (r, c))
+                elif type_p == 'R':
+                    valide = self.mouvement_valide_tour((ligne, colonne), (r, c))
+                elif type_p == 'Q':
+                    valide = self.mouvement_valide_fou((ligne, colonne), (r, c)) or self.mouvement_valide_tour((ligne, colonne), (r, c))
+                elif type_p == 'K':
+                    valide = self.mouvement_valide_roi((ligne, colonne), (r, c))
+                if valide:
+                    mouvements.append((r, c))
+        return mouvements
+    def est_echec_et_mat(self, couleur):
+        if not self.est_en_echec(couleur):
+            return False
+        for r in range(8):
+            for c in range(8):
+                piece = self.plateau[r][c]
+                if piece != "" and piece[0] == couleur:
+                    mouvements = self.mouvements_valide(r, c)
+                    if len(mouvements) > 0:
+                        return False
+        return True
+    def est_pat(self, couleur):
+        if self.est_en_echec(couleur):
+            return False
+        for r in range(8):
+            for c in range(8):
+                piece = self.plateau[r][c]
+                if piece != "" and piece[0] == couleur:
+                    mouvements = self.mouvements_valide(r, c)
+                    if len(self.mouvements_valide(r, c)) > 0:
+                        return False
+        return True
+    def enregistrer_position(self):
+        position_actuelle = tuple(tuple(row) for row in self.plateau)
+        self.historique_position.append(position_actuelle)
+    def est_triple_repetition(self):
+        if not self.historique_position:
+            return False
+        position_actuelle = self.historique_position[-1]
+        occurrences = self.historique_position.count(position_actuelle)
+
+        return occurrences >= 3
+    def est_manque_de_materiel(self):
+        pieces_blanches = []
+        pieces_noires = []
+        # On récupère toutes les pièces présentes et leurs coordonnées
+        for ligne in range(8):
+            for colonne in range(8):
+                piece = self.plateau[ligne][colonne]
+                if piece != "":
+                    # On stocke (type_de_piece, ligne, colonne)
+                    if piece[0] == 'w':
+                        pieces_blanches.append((piece[1], ligne, colonne))
+                    else:
+                        pieces_noires.append((piece[1], ligne, colonne))
+        nb_w = len(pieces_blanches)
+        nb_b = len(pieces_noires)
+        # 1. Roi contre Roi (wK vs bK)
+        if nb_w == 1 and nb_b == 1:
+            return True
+        # 2. Roi + Fou contre Roi
+        if (nb_w == 2 and nb_b == 1 and pieces_blanches[1][0] == 'B') or \
+           (nb_b == 2 and nb_w == 1 and pieces_noires[1][0] == 'B'):
+            return True
+        # 3. Roi + Cavalier contre Roi
+        if (nb_w == 2 and nb_b == 1 and pieces_blanches[1][0] == 'N') or \
+           (nb_b == 2 and nb_w == 1 and pieces_noires[1][0] == 'N'):
+            return True
+        # 4. Roi + Fou contre Roi + Fou (Fous de même couleur)
+        if nb_w == 2 and nb_b == 2:
+            p_w = [p for p in pieces_blanches if p[0] == 'B']
+            p_b = [p for p in pieces_noires if p[0] == 'B']
+            if len(p_w) == 1 and len(p_b) == 1:
+                # Vérification de la couleur de la case du fou (ligne + colonne) % 2
+                # Si (l+c)%2 est identique, ils sont sur la même couleur
+                couleur_fou_w = (p_w[0][1] + p_w[0][2]) % 2
+                couleur_fou_b = (p_b[0][1] + p_b[0][2]) % 2
+                if couleur_fou_w == couleur_fou_b:
+                    return True
+        return False
+    def peut_roquer(self, couleur, cote):
+        ligne = 7 if couleur == 'w' else 0
+        if self.est_en_echec(couleur): return False
+        
+        if cote == "petit":
+            deja_bouge = self.deplacement_roi_blanc or self.deplacement_tour_blanche_droite if couleur == 'w' else self.deplacement_roi_noir or self.deplacement_tour_noire_droite
+            if not deja_bouge and self.plateau[ligne][5] == "" and self.plateau[ligne][6] == "":
+                # Vérifie que les cases de passage ne sont pas attaquées
+                return not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 5), couleur) and \
+                       not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 6), couleur)
+        elif cote == "grand":
+            deja_bouge = self.deplacement_roi_blanc or self.deplacement_tour_blanche_gauche if couleur == 'w' else self.deplacement_roi_noir or self.deplacement_tour_noire_gauche
+            if not deja_bouge and self.plateau[ligne][1] == "" and self.plateau[ligne][2] == "" and self.plateau[ligne][3] == "":
+                # Vérifie cases 2 et 3 (le Roi finit en 2, passe par 3)
+                return not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 3), couleur) and \
+                       not self.simuler_mouvement_et_verifier_echec((ligne, 4), (ligne, 2), couleur)
+        return False
