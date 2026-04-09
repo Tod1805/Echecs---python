@@ -21,6 +21,7 @@ HAUTEUR = 830
 fenetre = pygame.display.set_mode((LARGEUR,HAUTEUR))
 pygame.display.set_caption("Jeu d'échecs")                                      #Titre du jeu, titre de la fenetre
 
+# Variables nécessaires de définir pour la suite du programme
 ej = EtatDeJeu()
 selection = ()                                                                   #pour stocker la case sélectionnée
 clics_joueur = []                                                                #pour stocker les clics du joueur
@@ -34,6 +35,8 @@ historique_positions = []
 debut_clignotement = 0
 case_roi_en_echec = None
 debut_partie = True
+message_bloque = ""
+debut_timer_bloque = 0
 
 # Définition des polices
 police_titre = pygame.font.SysFont("Verdana", 35, bold=True)
@@ -57,17 +60,36 @@ while encours :
     for event in pygame.event.get():                                            #assiotiation  des evenements aux action ( clavier, souris, espace... )
         if event.type == pygame.QUIT:                                           #fermeture de la fenetre
             encours = False
-        if event.type == pygame.MOUSEBUTTONDOWN and etat == "JEU":
-                pos = pygame.mouse.get_pos()
-                colonne = pos[0] // 100
-                ligne = pos[1] // 100
-                if ligne < 8 and colonne < 8 :
-                    if selection == (ligne, colonne):
-                        selection = ()
-                        clics_joueur = []
-                    else:
-                        selection = (ligne, colonne)
-                        clics_joueur.append(selection)
+        if event.type == pygame.MOUSEBUTTONDOWN and etat == "JEU" and etat_jeu is None:
+            pos = pygame.mouse.get_pos()
+            colonne = pos[0] // 100
+            ligne = pos[1] // 100
+            
+            if ligne < 8 and colonne < 8:
+                if selection == (ligne, colonne):
+                    selection = ()
+                    clics_joueur = []
+                elif len(clics_joueur) == 0:  # PREMIER CLIC
+                    piece_cliquee = ej.plateau[ligne][colonne]
+                    tour_joueur = 'w' if ej.trait_aux_blancs else 'b'
+                    
+                    if piece_cliquee != "" and piece_cliquee[0] == tour_joueur:
+                        # On vérifie si la pièce peut bouger
+                        possibles = ej.mouvements_valide(ligne, colonne)
+                        
+                        if len(possibles) == 0:
+                            # --- LA PIÈCE EST BLOQUÉE ---
+                            message_bloque = "PIÈCE BLOQUÉE !"
+                            debut_timer_bloque = pygame.time.get_ticks()
+                            vibration() # Effet sonore
+                            selection = ()
+                            clics_joueur = []
+                        else:
+                            selection = (ligne, colonne)
+                            clics_joueur.append(selection)
+                else: # DEUXIÈME CLIC
+                    selection = (ligne, colonne)
+                    clics_joueur.append(selection)
                 if len(clics_joueur) == 2:
                     dep_ligne, dep_colonne = clics_joueur[0]
                     arr_ligne, arr_colonne = clics_joueur[1]
@@ -409,6 +431,23 @@ while encours :
         rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2)) # Affiche le rectangle du message d'échec
         pygame.draw.rect(fenetre, (0, 0, 0), (rect_echec.x - 10, rect_echec.y - 10, rect_echec.width + 20, rect_echec.height + 20)) # Dessine un rectangle noir derrière le message d'échec pour le faire ressortir
         fenetre.blit(texte_echec, rect_echec) # Affiche le message d'échec au roi du joueur actuel
+    
+    if message_bloque != "":
+            temps_actuel = pygame.time.get_ticks()
+            # On vérifie si les 1000 ms (1 secondes) sont écoulées
+            if temps_actuel - debut_timer_bloque < 1000:
+                surface_texte = police_titre.render(message_bloque, True, (255, 255, 255))
+                rect_texte = surface_texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 15))
+                
+                # On dessine un fond pour le texte (optionnel mais plus lisible)
+                pygame.draw.rect(fenetre, (200, 0, 0), rect_texte.inflate(30, 30)) # Cadre rouge
+                pygame.draw.rect(fenetre, (0, 0, 0), rect_texte.inflate(20, 20))  # Fond noir
+                
+                fenetre.blit(surface_texte, rect_texte)
+            else:
+                # Le temps est écoulé, on réinitialise le message
+                message_bloque = ""
+
     pygame.display.flip() # Met à jour l'affichage de la fenêtre
     
 pygame.quit() # Quitte pygame proprement
