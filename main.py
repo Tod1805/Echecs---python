@@ -349,10 +349,10 @@ while encours :
 
     elif etat_jeu == "PROMOTION":
     
-        overlay = pygame.Surface((400, 200))                                                   # Crée une surface pour l'overlay de promotion
-        overlay.set_alpha(220)                                                                 # Transparence de l'overlay
-        overlay.fill((50, 50, 50))                                                             # Couleur de l'overlay (gris foncé)
-        fenetre.blit(overlay, (200, 300))                                                      # Affiche l'overlay de promotion au centre de la fenêtre
+        voile = pygame.Surface((400, 200))                                                   # Crée une surface pour l'overlay de promotion
+        voile.set_alpha(220)                                                                 # Transparence de l'overlay
+        voile.fill((50, 50, 50))                                                             # Couleur de l'overlay (gris foncé)
+        fenetre.blit(voile, (200, 300))                                                      # Affiche l'overlay de promotion au centre de la fenêtre
     
         options = ["Dame Q", "Tour R", "Fou B", "Cavalier N"]                                  # Options de promotion pour la pièce promue
         for i, option in enumerate(options):                                                   # Affiche les options de promotion pour la pièce promue
@@ -378,10 +378,28 @@ while encours :
         fenetre.blit(texte, texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50)))
         fenetre.blit(sous_texte, sous_texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 20)))
     elif etat == "FIN":
+        for ligne in range(8):
+            for colonne in range (8):
+                couleur = NOIR if (ligne + colonne) % 2 == 0 else BLANC
+                pygame.draw.rect(fenetre, couleur, pygame.Rect(colonne * taille_case, ligne * taille_case, taille_case, taille_case))
+        
+        for ligne in range(8):
+            for colonne in range(8):
+                piece = ej.plateau[ligne][colonne]
+                if piece != "":
+                    x = (colonne * 100) + 5
+                    y = (ligne * 100) + 5
+                    fenetre.blit(IMAGES[piece], (x, y))
         voile = pygame.Surface((LARGEUR, HAUTEUR))
-        voile.set_alpha(180)
-        voile.fill((25,25,25))
+        voile.set_alpha(160)
+        voile.fill((0, 0, 0))
         fenetre.blit(voile, (0, 0))
+        texte_fin = police_titre.render("Partie terminée", True, (255, 50, 50)) # Affiche le message de fin en rouge vif
+        texte_rejouer = police_instruction.render("Appuyez sur R pour rejouer ou Q pour quitter", True, (200, 200, 200))# Affiche les instructions pour rejouer ou quitter en gris clair
+        rect_fin = texte_fin.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 200)) # Dessine un rectangle du message de fin
+        rect_rejouer = texte_rejouer.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 50)) # Dessine un rectangle des instructions pour rejouer ou quitter
+        fenetre.blit(texte_fin, rect_fin) # Affiche le message de fin
+
         
         couleur_titre = (200, 200, 200)
 
@@ -422,17 +440,10 @@ while encours :
         rect_titre = texte_titre.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 90))
         texte_vainqueur = police_instruction.render(sous_titre, True, (255, 255, 255)) 
         rect_vainqueur = texte_vainqueur.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 40))
-
-
-
-        texte_fin = police_titre.render("Partie terminée", True, (255, 50, 50)) # Affiche le message de fin en rouge vif
-        texte_rejouer = police_instruction.render("Appuyez sur R pour rejouer ou Q pour quitter", True, (200, 200, 200))# Affiche les instructions pour rejouer ou quitter en gris clair
-        rect_fin = texte_fin.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 200)) # Dessine un rectangle du message de fin
-        rect_rejouer = texte_rejouer.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 50)) # Dessine un rectangle des instructions pour rejouer ou quitter
-
+       
         fenetre.blit(texte_titre, rect_titre)
         fenetre.blit(texte_vainqueur, rect_vainqueur)
-        fenetre.blit(texte_fin, rect_fin) # Affiche le message de fin
+        
         fenetre.blit(texte_rejouer, rect_rejouer) # Affiche les instructions pour rejouer ou quitter
     couleur_actuelle = "white" if ej.trait_aux_blancs else "black" # Détermine la couleur du joueur actuel
     if ej.est_en_echec(couleur_actuelle): # Affiche un message d'échec au roi du joueur actuel
