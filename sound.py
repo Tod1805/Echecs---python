@@ -17,5 +17,5 @@ def soundbackground_tod():
 
 def vibration():
     pygame.mixer.init()
-    sound = pygame.mixer.Sound("sounds/vibration.mp3")
+    sound = pygame.mixer.Sound("sounds/vibration.ogg")
     sound.play()
