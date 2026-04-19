@@ -21,6 +21,7 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
         self.deplacement_tour_noire_gauche = False
         self.deplacement_tour_noire_droite = False
     def mouvement_valide_pion(self, dep, arr, piece):
+        """Vérifie si le mouvement du pion est valide, en tenant compte des règles spécifiques aux pions, y compris les captures, les mouvements de deux cases depuis la position de départ et la règle de l'en passant."""
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
         direction = - 1 if piece[0] == 'w' else 1
@@ -39,18 +40,21 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                 return True
         return False
     def mouvement_valide_cavalier(self, dep, arr):
+        """Vérifie si le mouvement du cavalier est valide, en tenant compte de sa capacité à sauter par-dessus les autres pièces et de son mouvement en forme de L."""
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
         diff_ligne = abs(arr_ligne - dep_ligne)
         diff_colonne = abs(arr_colonne - dep_colonne)
         return (diff_ligne == 2 and diff_colonne == 1) or (diff_ligne == 1 and diff_colonne == 2)
     def mouvement_valide_fou(self, dep, arr):
+        """Vérifie si le mouvement du fou est valide, en tenant compte de sa capacité à se déplacer en diagonale et de la nécessité d'avoir un chemin libre entre la position de départ et la position d'arrivée."""
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
         if abs(arr_ligne - dep_ligne) == abs(arr_colonne - dep_colonne):
             return self.chemin_libre(dep, arr)
         return False
     def chemin_libre(self, dep, arr):
+        """Vérifie si le chemin entre la position de départ et la position d'arrivée est libre, c'est-à-dire qu'il n'y a aucune pièce sur les cases intermédiaires, en tenant compte des mouvements en ligne droite (pour les tours) et en diagonale (pour les fous)."""
         d_ligne = 0 if arr[0] == dep[0] else (1 if arr[0] > dep[0] else -1)
         d_colonne = 0 if arr[1] == dep[1] else (1 if arr[1] > dep[1] else -1)
         current_ligne, current_colonne = dep[0] + d_ligne, dep[1] + d_colonne
@@ -61,12 +65,14 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
             current_colonne += d_colonne
         return True
     def mouvement_valide_tour(self, dep, arr):
+        """Vérifie si le mouvement de la tour est valide, en tenant compte de sa capacité à se déplacer en ligne droite (horizontalement ou verticalement) et de la nécessité d'avoir un chemin libre entre la position de départ et la position d'arrivée."""
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
         if dep_ligne == arr_ligne or dep_colonne == arr_colonne:
             return self.chemin_libre(dep, arr)
         return False
     def simuler_mouvement_et_verifier_echec(self, dep, arr, couleur):
+        """Simule le mouvement d'une pièce de la position de départ à la position d'arrivée, vérifie si le roi de la couleur spécifiée est en échec après ce mouvement, puis restaure l'état du plateau à son état initial avant de retourner le résultat de la vérification d'échec."""
         piece_depart = self.plateau[dep[0]][dep[1]]
         piece_arrivee = self.plateau[arr[0]][arr[1]]
         self.plateau[arr[0]][arr[1]] = piece_depart
@@ -76,6 +82,7 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
         self.plateau[arr[0]][arr[1]] = piece_arrivee
         return en_echec
     def mouvement_valide_roi(self, dep, arr):
+        """Vérifie si le mouvement du roi est valide, en tenant compte de sa capacité à se déplacer d'une case dans n'importe quelle direction et de la nécessité de ne pas se déplacer vers une case attaquée par une pièce adverse."""
         dep_ligne, dep_colonne = dep
         arr_ligne, arr_colonne = arr
         
@@ -83,6 +90,7 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
         diff_colonne = abs(arr_colonne - dep_colonne)
         return diff_ligne <= 1 and diff_colonne <= 1
     def mouvements_valide(self, ligne, colonne):
+        """Génère une liste de mouvements valides pour la pièce située à la position spécifiée (ligne, colonne), en tenant compte des règles de mouvement spécifiques à chaque type de pièce, des captures possibles, des mouvements spéciaux comme le roque et l'en passant, ainsi que de la vérification que le roi du joueur ne se retrouve pas en échec après le mouvement."""
         mouvements = []
         piece = self.plateau[ligne][colonne]
         if piece == "":
@@ -138,16 +146,17 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                             mouvements.append((r, c, False))             
         return mouvements
     def est_en_echec(self, couleur_roi):
+        """Vérifie si le roi de la couleur spécifiée est en échec, c'est-à-dire s'il est attaqué par une pièce adverse, en parcourant le plateau pour trouver la position du roi et en vérifiant les mouvements possibles de toutes les pièces adverses pour voir si l'une d'entre elles peut capturer le roi."""
         roi_position = None
-        chercher = couleur_roi + "K"
+        chercher = couleur_roi + "K" # On cherche le roi de la couleur spécifiée (par exemple, "wK" pour le roi blanc ou "bK" pour le roi noir)
         for r in range(8):
             for c in range(8):
                 if self.plateau[r][c] == chercher:
                     roi_position = (r, c)
-                    break
-            if roi_position:
+                    break # On peut sortir de la boucle dès qu'on trouve le roi
+            if roi_position: # Si le roi a été trouvé, on peut sortir de la boucle extérieure aussi
                 break
-        if not roi_position:
+        if not roi_position: # Si le roi n'est pas trouvé, on considère qu'il n'est pas en échec (bien que cela ne devrait jamais arriver dans une partie normale)
             return False
         couleur_ennemie = 'b' if couleur_roi == 'w' else 'w'
         for r in range(8):
@@ -159,6 +168,7 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                         return True
         return False
     def get_mouvements_physiques(self, ligne, colonne):
+        """Génère une liste de mouvements physiques possibles pour la pièce située à la position spécifiée (ligne, colonne), en tenant compte uniquement des règles de mouvement spécifiques à chaque type de pièce, sans vérifier si le roi du joueur se retrouve en échec après le mouvement."""
         mouvements = []
         piece = self.plateau[ligne][colonne]
         if piece == "":
@@ -186,6 +196,7 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                     mouvements.append((r, c))
         return mouvements
     def est_echec_et_mat(self, couleur):
+        """Vérifie si le roi de la couleur spécifiée est en échec et mat, c'est-à-dire s'il est en échec et qu'il n'existe aucun mouvement légal pour le roi ou pour aucune autre pièce de la même couleur qui puisse sortir le roi de l'échec, en parcourant toutes les pièces de la couleur spécifiée et en vérifiant leurs mouvements valides pour voir s'il existe au moins un mouvement qui ne laisse pas le roi en échec."""
         if not self.est_en_echec(couleur):
             return False
         for r in range(8):
@@ -197,6 +208,7 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                         return False
         return True
     def est_pat(self, couleur):
+        """Vérifie si le roi de la couleur spécifiée est en pat, c'est-à-dire s'il n'est pas en échec mais qu'il n'existe aucun mouvement légal pour le roi ou pour aucune autre pièce de la même couleur, en parcourant toutes les pièces de la couleur spécifiée et en vérifiant leurs mouvements valides pour voir s'il existe au moins un mouvement qui puisse être joué, même si le roi n'est pas en échec."""
         if self.est_en_echec(couleur):
             return False
         for r in range(8):
@@ -208,9 +220,11 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                         return False
         return True
     def enregistrer_position(self):
+        """Enregistre la position actuelle du plateau dans l'historique des positions, en convertissant le plateau en une structure de données immuable (par exemple, un tuple de tuples) pour pouvoir le stocker dans une liste et vérifier les répétitions de positions pour la règle de la nulle par répétition."""
         position_actuelle = tuple(tuple(row) for row in self.plateau)
         self.historique_position.append(position_actuelle)
     def est_triple_repetition(self):
+        """Vérifie si la position actuelle du plateau a été répétée au moins trois fois dans l'historique des positions, en comptant le nombre d'occurrences de la position actuelle dans l'historique et en retournant True si elle a été répétée trois fois ou plus, ce qui permet de déterminer si la partie peut être déclarée nulle en raison de la règle de la nulle par répétition."""
         if not self.historique_position:
             return False
         position_actuelle = self.historique_position[-1]
@@ -218,6 +232,7 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
 
         return occurrences >= 3
     def est_manque_de_materiel(self):
+        """Vérifie si les deux joueurs manquent de matériel suffisant pour mater, c'est-à-dire s'ils n'ont que quelques pièces mineures (par exemple, un roi contre un roi, un roi et un fou contre un roi, un roi et un cavalier contre un roi, ou deux fous de même couleur contre un roi), en parcourant le plateau pour compter les pièces restantes de chaque joueur et en vérifiant si la configuration des pièces correspond à l'une des situations de manque de matériel reconnues pour la déclaration d'une partie nulle."""
         pieces_blanches = []
         pieces_noires = []
         # On récupère toutes les pièces présentes et leurs coordonnées
@@ -256,6 +271,7 @@ class EtatDeJeu: # Classe pour représenter l'état du jeu d'échecs, y compris 
                     return True
         return False
     def peut_roquer(self, couleur, cote):
+        """Vérifie si le roque est possible pour le roi de la couleur spécifiée du côté spécifié (petit ou grand), en tenant compte des conditions nécessaires pour le roque, notamment que ni le roi ni la tour impliquée n'ont bougé auparavant, que les cases entre le roi et la tour sont vides, que le roi n'est pas actuellement en échec, et que les cases que le roi traverse ou sur lesquelles il arrive ne sont pas attaquées par une pièce adverse."""
         ligne = 7 if couleur == 'w' else 0
         if self.est_en_echec(couleur): return False
         
