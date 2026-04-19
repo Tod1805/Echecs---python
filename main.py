@@ -1,73 +1,26 @@
-import sys                                                                      # permet de quitter proprement le programme
-import pygame                                                                   # librairie principale pour le jeu
-from sound import soundbackground, vibration, soundeffect, soundbackground_tod  # importe les fonctions de son définies dans sound.py
-from classes import EtatDeJeu
-from pygame.locals import *                                                     # Constantes pygame (K_SPACE, QUIT, etc.)
+import sys # Permet de quitter proprement le programme
+import pygame # Librairie principale pour le jeu
+from sound import vibration, soundeffect, soundbackground # Importe les fonctions de son définies dans sound.py
+from classes import EtatDeJeu # Importe la classe EtatDeJeu définie dans classes.py pour gérer l'état de la partie, les règles du jeu, les mouvements possibles, etc.
+from pygame.locals import * # Constantes pygame (K_SPACE, QUIT, etc.)
+from constantes import * # Importe les constantes définies dans constantes.py pour les dimensions de la fenêtre, les couleurs, les polices, les images, et les variables globales de contrôle du jeu
 
-IMAGES = {}
-def charger_images():
-    pieces = ["bR", "bN", "bB", "bQ", "bK", "bp", "wR", "wN", "wB", "wQ", "wK", "wp"]
-    for piece in pieces:
-        chemin = "images/" + piece + ".png"
-        IMAGES[piece] = pygame.transform.scale(pygame.image.load(chemin), (90, 90))
-
-
-#Initialisation de pygame 
-
-pygame.init()                                                                   # demarre tous les modules pygame
-pygame.font.init()
-LARGEUR = 800
-HAUTEUR = 830
-fenetre = pygame.display.set_mode((LARGEUR,HAUTEUR))
-pygame.display.set_caption("Jeu d'échecs")                                      #Titre du jeu, titre de la fenetre
-
-# Variables nécessaires de définir pour la suite du programme
-ej = EtatDeJeu()
-selection = ()                                                                   #pour stocker la case sélectionnée
-clics_joueur = []                                                                #pour stocker les clics du joueur
-message_erreur = ""
-debut_message_erreur = 0
-encours = True                                                                  #controle de la boucle principal du jeu                                               
-etat = "MENU"
-etat_jeu = None
-gagnant = ""
-historique_positions = []
-debut_clignotement = 0
-case_roi_en_echec = None
-debut_partie = True
-message_bloque = ""
-debut_timer_bloque = 0
-titre = ""
-sous_titre = ""
-
-# Définition des polices
-police_titre = pygame.font.SysFont("Verdana", 35, bold=True)
-police_instruction = pygame.font.SysFont("Verdana", 25)
-police_petite = pygame.font.SysFont("Arial", 18, bold=True)
-
-# Couleurs
-BLANC = (255, 255, 255)
-GRIS_CLAIR = (200, 200, 200)
-NOIR = (0, 0, 0)
-
-taille_case = LARGEUR  // 8
-
-image_menu = pygame.image.load("images/wp.png")
-image_menu = pygame.transform.scale(image_menu, (400, 400))
-rect_image = image_menu.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 50))
+#Initialisation de pygame et de la fenêtre de jeu
+pygame.init() # Initialise tous les modules de Pygame
+pygame.font.init() # Initialise le module de police de caractères de Pygame
+pygame.display.set_caption("Jeu d'échecs") # Définit le titre de la fenêtre du jeu d'échecs, qui s'affiche généralement dans la barre de titre de la fenêtre, pour identifier le jeu et lui donner une identité visuelle.
 
 charger_images() 
 
 while encours :                                                                  
-    for event in pygame.event.get():                                            #assiotiation  des evenements aux action ( clavier, souris, espace... )
-        if event.type == pygame.QUIT:                                           #fermeture de la fenetre
+    for event in pygame.event.get(): # Récupère tous les événements qui se sont produits depuis la dernière itération de la boucle, tels que les clics de souris, les pressions de touches, les mouvements de la souris, etc., et les traite un par un pour mettre à jour l'état du jeu en fonction des actions du joueur.
+        if event.type == pygame.QUIT: # si l'evenement est de type QUIT (fermeture de la fenêtre), alors on quitte le programme proprement en appelant pygame.quit() pour fermer la fenêtre et sys.exit() pour terminer le processus Python.
             encours = False
-        if event.type == pygame.MOUSEBUTTONDOWN and etat == "JEU" and etat_jeu is None:
+        if event.type == pygame.MOUSEBUTTONDOWN and etat == "JEU" and etat_jeu is None: # Si le joueur clique avec la souris pendant que le jeu est en cours et qu'aucun menu n'est ouvert, on traite le clic pour sélectionner une pièce ou faire un mouvement
             pos = pygame.mouse.get_pos()
             colonne = pos[0] // 100
             ligne = pos[1] // 100
-            
-            if ligne < 8 and colonne < 8:
+            if ligne < 8 and colonne < 8: # Vérifie que le clic est bien dans les limites du plateau de jeu (8x8 cases), pour éviter les erreurs d'indexation et garantir que les interactions du joueur sont correctement traitées uniquement lorsqu'elles se produisent sur le plateau de jeu
                 if selection == (ligne, colonne):
                     selection = ()
                     clics_joueur = []
@@ -78,9 +31,8 @@ while encours :
                     if piece_cliquee != "" and piece_cliquee[0] == tour_joueur:
                         # On vérifie si la pièce peut bouger
                         possibles = ej.mouvements_valide(ligne, colonne)
-                        
                         if len(possibles) == 0:
-                            # --- LA PIÈCE EST BLOQUÉE ---
+                            # La pièce est bloquée, on affiche un message pendant 1 seconde et on réinitialise la sélection
                             message_bloque = "PIÈCE BLOQUÉE !"
                             debut_timer_bloque = pygame.time.get_ticks()
                             vibration() # Effet sonore
@@ -89,10 +41,10 @@ while encours :
                         else:
                             selection = (ligne, colonne)
                             clics_joueur.append(selection)
-                else: # DEUXIÈME CLIC
+                else: # Deuxième clic
                     selection = (ligne, colonne)
                     clics_joueur.append(selection)
-                if len(clics_joueur) == 2:
+                if len(clics_joueur) == 2: # Si le joueur a cliqué deux fois, on essaie de faire le mouvement
                     dep_ligne, dep_colonne = clics_joueur[0]
                     arr_ligne, arr_colonne = clics_joueur[1]
                     piece = ej.plateau[dep_ligne][dep_colonne]
@@ -105,16 +57,14 @@ while encours :
                             # On récupère tous les mouvements valides pour cette pièce
                             # Ils sont sous la forme (ligne, col, est_capture)
                             mouvements_possibles = ej.mouvements_valide(dep_ligne, dep_colonne)
-                            
                             # On cherche si le clic d'arrivée correspond à un mouvement autorisé
                             mouvement_choisi = None
                             for m in mouvements_possibles:
                                 if m[0] == arr_ligne and m[1] == arr_colonne:
                                     mouvement_choisi = m
-                                    break
-                            
+                                    break # Si le mouvement choisi n'est pas dans les mouvements possibles, on ne fait rien (le clic est ignoré)
                             if mouvement_choisi:
-                                # --- 1. GESTION DU ROQUE ---
+                                # Le Roque est traité comme un mouvement spécial : on déplace le roi, puis la tour
                                 if piece_depart[1] == 'K' and abs(arr_colonne - dep_colonne) == 2:
                                     tour_ligne = arr_ligne
                                     if arr_colonne == 6: # Petit roque
@@ -124,7 +74,7 @@ while encours :
                                         ej.plateau[tour_ligne][3] = ej.plateau[tour_ligne][0]
                                         ej.plateau[tour_ligne][0] = ""
 
-                                # --- 2. MISE À JOUR DES DRAPEAUX ---
+                                # Le déplacement du roi ou de la tour empêche le roque, on met à jour les variables correspondantes pour désactiver le roque si nécessaire
                                 if piece_depart == "wK": ej.deplacement_roi_blanc = True
                                 elif piece_depart == "bK": ej.deplacement_roi_noir = True
                                 elif piece_depart == "wR":
@@ -134,7 +84,7 @@ while encours :
                                     if dep_colonne == 0: ej.deplacement_tour_noire_gauche = True
                                     elif dep_colonne == 7: ej.deplacement_tour_noire_droite = True
 
-                                # --- 3. EXÉCUTION DU MOUVEMENT ---
+                                # Le déplacement capture une pièce adverse, on joue un son de capture et on désactive le roque si une tour est capturée
                                 if piece_arrivee != "":
                                     soundeffect()
                                     # Désactiver le roque si une tour est capturée
@@ -146,7 +96,7 @@ while encours :
                                 ej.plateau[arr_ligne][arr_colonne] = piece_depart
                                 ej.plateau[dep_ligne][dep_colonne] = ""
 
-                                # --- 4. GESTION DU PION (Promotion & En Passant) ---
+                                # La prise en passant est traitée comme un mouvement spécial : si un pion fait un double pas, on active la cible en passant, et si un pion adverse capture en passant, on enlève la pièce capturée du plateau
                                 if piece_depart[1] == 'p':
                                     # En passant (prise physique)
                                     if (arr_ligne, arr_colonne) == ej.case_en_passant:
@@ -166,12 +116,11 @@ while encours :
                                 else:
                                     ej.case_en_passant = None
 
-                                # --- 5. FIN DU TOUR ---
+                                # Fin du tour : on enregistre la position, on change de joueur, on réinitialise la sélection et les clics, et on vérifie si le roi adverse est en échec pour déclencher le clignotement et le son de vibration
                                 debut_partie = False
                                 ej.enregistrer_position()
                                 ej.trait_aux_blancs = not ej.trait_aux_blancs
                                 ej.compteur_50_coups = 0 if (piece_depart[1] == 'p' or piece_arrivee != "") else ej.compteur_50_coups + 1
-
                     selection = ()
                     clics_joueur = []
                 couleur_suivante = 'w' if ej.trait_aux_blancs else 'b'
@@ -182,9 +131,9 @@ while encours :
                             if ej.plateau[r][c] == couleur_suivante + "K":
                                 case_roi_en_echec = (r, c)
         if event.type == pygame.KEYDOWN:
-            # --- 1. PRIORITÉ ABSOLUE : LES MENUS DE CONFIRMATION ---
+            # Menu de confirmation pour l'abandon et la proposition de nulle, et menu de promotion du pion
             # Si on attend une réponse O/N, on ne regarde RIEN d'autre
-            if etat_jeu == "CONFIRMATION_ABANDON":
+            if etat_jeu == "CONFIRMATION_ABANDON": # On vérifie si le joueur confirme son abandon ou sa proposition de nulle
                 if event.key == pygame.K_o:
                     gagnant = f"Abandon des {'Blancs' if ej.trait_aux_blancs else 'Noirs'}"
                     etat = "FIN"
@@ -193,7 +142,7 @@ while encours :
                     etat_jeu = None  # On annule et on revient au jeu
                 continue # On passe directement à l'évenement suivant
 
-            elif etat_jeu == "PROPOSITION_NULLE":
+            elif etat_jeu == "PROPOSITION_NULLE": # On vérifie si le joueur accepte la proposition de nulle
                 if event.key == pygame.K_o:
                     gagnant = "Accord mutuel"
                     etat = "FIN"
@@ -202,30 +151,28 @@ while encours :
                     etat_jeu = None
                 continue
                 
-            elif etat_jeu == "PROMOTION":
+            elif etat_jeu == "PROMOTION": # On vérifie quelle pièce le joueur choisit pour la promotion du pion
                 r, c = possibilites_promotion
                 touche_valide = True
-                
-                if event.key == pygame.K_q:    # Dame
-                    ej.plateau[r][c] = couleur_promue + "Q"
-                elif event.key == pygame.K_r:  # Tour
+                if event.key == pygame.K_q:    # Dame (Queen)
+                    ej.plateau[r][c] = couleur_promue + "Q" # On place la pièce promue sur le plateau en fonction de la couleur du pion qui a atteint la dernière rangée (wQ pour une promotion d'un pion blanc, bQ pour une promotion d'un pion noir)
+                elif event.key == pygame.K_r:  # Tour (Rook)
                     ej.plateau[r][c] = couleur_promue + "R"
                 elif event.key == pygame.K_b:  # Fou (Bishop)
                     ej.plateau[r][c] = couleur_promue + "B"
-                elif event.key == pygame.K_n:  # Cavalier (kNight)
+                elif event.key == pygame.K_n:  # Cavalier (Knight)
                     ej.plateau[r][c] = couleur_promue + "N"
                 else:
                     touche_valide = False
-                
                 if touche_valide:
                     etat_jeu = None # On ferme le menu de promotion et on reprend le jeu
                 continue # On ne traite pas les autres touches (A, P, ESC) pendant la promotion
 
-            # --- 2. GESTION DES AUTRES ÉTATS ---
+            # Espace pour démarrer la partie depuis le menu
             if etat == "MENU":
                 if event.key == pygame.K_SPACE:
                     etat = "JEU"
-                    soundbackground_tod()
+                    soundbackground() # Lancer la musique de fond dès le début de la partie
 
             elif etat == "JEU":
                 # On ne vérifie A et P que si aucun menu n'est ouvert
@@ -252,19 +199,13 @@ while encours :
                     debut_partie = True
                 elif event.key == pygame.K_q:
                     encours = False
-    if etat == "MENU":
-        fenetre.fill((0,0,0))                                                     #met à jour l'ecran
-        texte_bienvenue = police_titre.render("Bienvenue dans notre jeu d'échecs", True, (255, 255, 255))
-        texte_instruction = police_instruction.render("Appuyez sur ESPACE pour jouer", True, (200, 200, 200))
 
-        rect_bienvenue = texte_bienvenue.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 250))
-        rect_instruction = texte_instruction.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 200))
-
+    if etat == "MENU": # Affichage du menu principal avec le titre, les instructions et une image d'accueil
+        fenetre.fill(NOIR)
         fenetre.blit(image_menu, rect_image)
         fenetre.blit(texte_bienvenue, rect_bienvenue)
         fenetre.blit(texte_instruction, rect_instruction)
-
-    elif etat == "JEU":
+    elif etat == "JEU": # Affichage du plateau de jeu, des pièces, des messages d'état (échec, échec et mat, tour actuel, etc.) et des indications de mouvements possibles
         for ligne in range(8):
             for colonne in range (8):
                 couleur = NOIR if (ligne + colonne) % 2 == 0 else BLANC
@@ -278,10 +219,8 @@ while encours :
                     y = (ligne * 100) + 5
                     fenetre.blit(IMAGES[piece], (x, y))
 
-        if debut_partie:
-            texte_debut = police_titre.render("AUX BLANCS DE JOUER", True, (255, 255, 255))
-            rect_debut = texte_debut.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 15))
-            pygame.draw.rect(fenetre, (0, 0, 0), rect_debut.inflate(20, 20))
+        if debut_partie: # Affiche un message de début de partie au centre de l'écran avant le premier coup
+            pygame.draw.rect(fenetre, NOIR, rect_debut.inflate(20, 20))
             fenetre.blit(texte_debut, rect_debut)
 
         if selection != ():
@@ -289,100 +228,96 @@ while encours :
             piece_cliquee = ej.plateau[ligne][colonne]
             tour_joueur = 'w' if ej.trait_aux_blancs else 'b'
             
-            if piece_cliquee != "" and piece_cliquee[0] == tour_joueur:
+            if piece_cliquee != "" and piece_cliquee[0] == tour_joueur: # Si la pièce cliquée appartient au joueur dont c'est le tour, on affiche les mouvements possibles pour cette pièce
                 possibles = ej.mouvements_valide(ligne, colonne)
                 for m in possibles:
                     m_ligne, m_colonne, type_mouv = m
                     if type_mouv == "roque":
-                        couleur_point = (148, 0, 211)
+                        couleur_point = (VOILET)
                     elif type_mouv is True:
-                        couleur_point = (250, 50, 50)
+                        couleur_point = (ROUGE_VIF) 
                     else:
-                        couleur_point = (100, 100, 100)
+                        couleur_point = (GRIS_CLAIR)
                     centre_x = m_colonne * 100 + 50
                     centre_y = m_ligne * 100 + 50
                     pygame.draw.circle(fenetre, couleur_point, (centre_x, centre_y), 15)
         couleur_actuelle = "w" if ej.trait_aux_blancs else "b"
-        if ej.est_echec_et_mat(couleur_actuelle):
+        if ej.est_echec_et_mat(couleur_actuelle): # Affiche un message d'échec et mat au centre de l'écran avec le nom du gagnant
             etat = "FIN"
             gagnant = 'Blancs' if not ej.trait_aux_blancs else 'Noirs'
-            texte_echec_mat = police_titre.render("Échec et mat ! Gagnant : " + gagnant, True, (255, 50, 50))
+            texte_echec_mat = police_titre.render("Échec et mat ! Gagnant : " + gagnant, True, ROUGE_VIF)
             rect_echec_mat = texte_echec_mat.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 100))
-            pygame.draw.rect(fenetre, (0, 0, 0), rect_echec_mat.inflate(20, 20))
+            pygame.draw.rect(fenetre, NOIR, rect_echec_mat.inflate(20, 20))
             fenetre.blit(texte_echec_mat, rect_echec_mat)
-            pygame.mixer.fadeout(10000)                                                                           # Fondu de 10 secondes pour la musique de fond
-        elif ej.est_en_echec(couleur_actuelle):
+            pygame.mixer.fadeout(10000) # Fondu de 10 secondes pour la musique de fond
+        elif ej.est_en_echec(couleur_actuelle): # Affiche un message d'échec au roi du joueur actuel
             texte_echec = police_titre.render("Échec au roi " + ("Blanc" if couleur_actuelle == 'w' else "Noir"), True, (255, 50, 50))
             rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 15))
-            pygame.draw.rect(fenetre, (0, 0, 0), rect_echec.inflate(20, 20))
+            pygame.draw.rect(fenetre, NOIR, rect_echec.inflate(20, 20))
             fenetre.blit(texte_echec, rect_echec)
-        elif ej.est_manque_de_materiel():
+        elif ej.est_manque_de_materiel(): # Affiche un message de fin de partie pour manque de matériel
             etat = "FIN"
             gagnant = "Manque de matériel"
         nb_total = len(ej.historique_position)
         if nb_total < 20:
             manquant = 20 - nb_total
             message = f"ESC pour quitter | Options A/P bloquées - Encore {manquant} demi-coups"
-            couleur_barre = (200, 100, 100)
+            couleur_barre = (ROUGE_CLAIR)
         else:
-            message = "ESC pour quitter | A : Abandonner | P : Proposer Nulle"
-            couleur_barre = (100, 200, 100)
+            message = "ESC pour quitter | A : Abandonner | P : Proposer Nulle" # Affiche les options disponibles pour le joueur (abandonner, proposer nulle) et les conditions pour les débloquer (20 demi-coups)
+            couleur_barre = (VERT_CLAIR)
         pygame.draw.rect(fenetre, couleur_barre, (0, HAUTEUR - 30, LARGEUR, 30))
-        texte_msg = police_petite.render(message, True, (0, 0, 0))
+        texte_msg = police_petite.render(message, True, NOIR)
         fenetre.blit(texte_msg, texte_msg.get_rect(center=(LARGEUR//2, HAUTEUR - 15)))
         couleur_tour = "Blancs" if ej.trait_aux_blancs else "Noirs"
-        texte_tour = police_petite.render(f"Tour des {couleur_tour}", True, (255, 255, 255))
-        pygame.draw.rect(fenetre, (50, 50, 50), (5, 5, 150, 25))
+        texte_tour = police_petite.render(f"Tour des {couleur_tour}", True, BLANC)
+        pygame.draw.rect(fenetre, GRIS_FONCE, (5, 5, 150, 25)) #
         fenetre.blit(texte_tour, (10, 8))
     if case_roi_en_echec:
         temps_ecoule = pygame.time.get_ticks() - debut_clignotement
-        if temps_ecoule < 2000:                                                                # Clignote pendant 2 secondes
-            if (temps_ecoule // 250) % 2 == 0:                                                 # Alterne entre visible et invisible toutes les 250 ms
-                r, c = case_roi_en_echec                                                       # Affiche un clignotement rouge sur la case du roi en échec
-                s = pygame.Surface((100, 100))                                                 # Crée une surface pour le clignotement
-                s.set_alpha(128)                                                               # Transparence
-                s.fill((255, 0, 0))                                                            # Couleur rouge
-                fenetre.blit(s, (c * 100, r * 100))                                            # Affiche le clignotement sur la case du roi en échec
-                vibration()                                                                    # Déclenche un son de vibration pour renforcer l'effet d'échec
+        if temps_ecoule < 2000: # Clignote pendant 2 secondes
+            if (temps_ecoule // 250) % 2 == 0: # Alterne entre visible et invisible toutes les 250 ms
+                r, c = case_roi_en_echec # Affiche un clignotement rouge sur la case du roi en échec
+                voile = pygame.Surface((100, 100)) # Crée une surface pour le clignotement
+                voile.set_alpha(128) # Transparence
+                voile.fill(ROUGE) # Couleur du clignotement (rouge)
+                fenetre.blit(voile, (c * 100, r * 100)) # Affiche le clignotement sur la case du roi en échec
+                vibration() # Déclenche un son de vibration pour renforcer l'effet d'échec
         else: 
-            case_roi_en_echec = None                                                           # Arrête le clignotement après 2 secondes
-
-    elif etat_jeu == "PROMOTION":
+            case_roi_en_echec = None # Arrête le clignotement après 2 secondes
+    elif etat_jeu == "PROMOTION": # Affiche un menu de promotion du pion, avec un voile sombre en arrière-plan et des options de promotion pour la pièce promue, afin d'informer le joueur de la promotion de son pion et de lui permettre de choisir la pièce qu'il souhaite obtenir en échange du pion
+        voile = pygame.Surface((400, 200)) # Crée une surface pour le voile de promotion
+        voile.set_alpha(220)
+        voile.fill(GRIS_FONCE)
+        fenetre.blit(voile, (200, 300))
     
-        voile = pygame.Surface((400, 200))                                                   # Crée une surface pour l'overlay de promotion
-        voile.set_alpha(220)                                                                 # Transparence de l'overlay
-        voile.fill((50, 50, 50))                                                             # Couleur de l'overlay (gris foncé)
-        fenetre.blit(voile, (200, 300))                                                      # Affiche l'overlay de promotion au centre de la fenêtre
-    
-        options = ["Dame Q", "Tour R", "Fou B", "Cavalier N"]                                  # Options de promotion pour la pièce promue
-        for i, option in enumerate(options):                                                   # Affiche les options de promotion pour la pièce promue
-            texte_option = police_petite.render(option, True, (255, 255, 255))                 # Affiche les options de promotion en blanc
-            fenetre.blit(texte_option, (250, 320 + i * 40))                                    # Affiche les options de promotion dans la fenêtre
-    
-    elif etat_jeu == "CONFIRMATION_ABANDON":
+        options = ["Dame Q", "Tour R", "Fou B", "Cavalier N"] # Options de promotion pour la pièce promue
+        for i, option in enumerate(options): # Affiche les options de promotion pour la pièce promue
+            texte_option = police_petite.render(option, True, BLANC) # Affiche les options de promotion en blanc
+            fenetre.blit(texte_option, (250, 320 + i * 40)) # Affiche les options de promotion dans la fenêtre
+    elif etat_jeu == "CONFIRMATION_ABANDON": # Affiche un menu de confirmation pour l'abandon de la partie, avec un voile sombre en arrière-plan et des instructions pour le joueur, afin d'éviter les abandons accidentels et de s'assurer que le joueur est conscient de sa décision avant de quitter la partie.
         voile = pygame.Surface((LARGEUR, HAUTEUR))
         voile.set_alpha(160)
-        voile.fill((0, 0, 0))
+        voile.fill(NOIR)
         fenetre.blit(voile, (0, 0))
-        texte = police_titre.render("Abandonner la partie ?", True, (255, 255, 255))
-        sous_texte = police_instruction.render("Appuyez sur O (Oui) ou N (Non)", True, (200, 200, 200))
+        texte = police_titre.render("Abandonner la partie ?", True, BLANC)
+        sous_texte = police_instruction.render("Appuyez sur O (Oui) ou N (Non)", True, GRIS_CLAIR)
         fenetre.blit(texte, texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50)))
         fenetre.blit(sous_texte, sous_texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 20)))
-    elif etat_jeu == "PROPOSITION_NULLE":
+    elif etat_jeu == "PROPOSITION_NULLE": # Affiche un menu de proposition de nulle, avec un voile sombre en arrière-plan et des instructions pour le joueur, afin de permettre au joueur de proposer une nulle à son adversaire et d'attendre sa réponse avant de continuer la partie.
         voile = pygame.Surface((LARGEUR, HAUTEUR))
         voile.set_alpha(160)
-        voile.fill((0, 0, 0))
+        voile.fill(NOIR)
         fenetre.blit(voile, (0, 0))
-        texte = police_titre.render("Accepter la nulle ?", True, (255, 255, 255))
-        sous_texte = police_instruction.render("Appuyez sur O (Oui) ou N (Non)", True, (200, 200, 200))
+        texte = police_titre.render("Accepter la nulle ?", True, BLANC)
+        sous_texte = police_instruction.render("Appuyez sur O (Oui) ou N (Non)", True, GRIS_CLAIR)
         fenetre.blit(texte, texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 50)))
         fenetre.blit(sous_texte, sous_texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 20)))
     elif etat == "FIN":
         for ligne in range(8):
             for colonne in range (8):
                 couleur = NOIR if (ligne + colonne) % 2 == 0 else BLANC
-                pygame.draw.rect(fenetre, couleur, pygame.Rect(colonne * taille_case, ligne * taille_case, taille_case, taille_case))
-        
+                pygame.draw.rect(fenetre, couleur, pygame.Rect(colonne * taille_case, ligne * taille_case, taille_case, taille_case)) 
         for ligne in range(8):
             for colonne in range(8):
                 piece = ej.plateau[ligne][colonne]
@@ -392,28 +327,19 @@ while encours :
                     fenetre.blit(IMAGES[piece], (x, y))
         voile = pygame.Surface((LARGEUR, HAUTEUR))
         voile.set_alpha(160)
-        voile.fill((0, 0, 0))
+        voile.fill(NOIR)
         fenetre.blit(voile, (0, 0))
-        texte_fin = police_titre.render("Partie terminée", True, (255, 50, 50)) # Affiche le message de fin en rouge vif
-        texte_rejouer = police_instruction.render("Appuyez sur R pour rejouer ou Q pour quitter", True, (200, 200, 200))# Affiche les instructions pour rejouer ou quitter en gris clair
-        rect_fin = texte_fin.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 200)) # Dessine un rectangle du message de fin
-        rect_rejouer = texte_rejouer.get_rect(center=(LARGEUR//2, HAUTEUR//2 + 50)) # Dessine un rectangle des instructions pour rejouer ou quitter
         fenetre.blit(texte_fin, rect_fin) # Affiche le message de fin
 
-        
-        couleur_titre = (200, 200, 200)
-
-        if "Abandon" in gagnant:
+        if "Abandon" in gagnant: # Si la partie s'est terminée par un abandon, on affiche un message spécifique avec le vainqueur
             titre = "PARTIE ABANDONNÉE"
-            couleur_titre = (255, 100, 100) # Rouge un peu plus doux
+            couleur_titre = ROUGE
             # On extrait le vainqueur pour le sous-titre
             vainqueur = "Blancs" if "Noirs" in gagnant else "Noirs"
-            sous_titre = f"Victoire des {vainqueur} par abandon"
-            
+            sous_titre = f"Victoire des {vainqueur} par abandon"            
         elif "Accord mutuel" in gagnant:
             titre = "MATCH NUL !"
             sous_titre = "Nulle par accord mutuel"
-
         if "Pat" in gagnant:
             titre = "MATCH NUL !"
             sous_titre = "Match nul par pat !"
@@ -428,47 +354,43 @@ while encours :
             pygame.mixer.fadeout(10000) # Fondu de 10 secondes pour la musique de fond
         elif gagnant in ["Blancs", "Noirs"]:
             titre = "ECHEC ET MAT !"
-            couleur_titre = (255, 215, 0)
+            couleur_titre = (OR)
             sous_titre = f"Victoire des {gagnant} !"
             pygame.mixer.fadeout(10000) # Fondu de 10 secondes pour la musique de fond
         elif "Manque de matériel" in gagnant:
             titre = "MATCH NUL !"
             sous_titre = "Match nul par manque de matériel !"
             pygame.mixer.fadeout(10000) # Fondu de 10 secondes pour la musique de fond
-
+        #print("Debug : sous_titre =", sous_titre)  # Debug pour vérifier le contenu de sous_titre
+        texte_vainqueur = police_instruction.render(sous_titre, True, BLANC)
+        rect_vainqueur = texte_vainqueur.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 40))
         texte_titre = police_titre.render(titre, True, couleur_titre)
         rect_titre = texte_titre.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 90))
-        texte_vainqueur = police_instruction.render(sous_titre, True, (255, 255, 255)) 
-        rect_vainqueur = texte_vainqueur.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 40))
-       
         fenetre.blit(texte_titre, rect_titre)
         fenetre.blit(texte_vainqueur, rect_vainqueur)
-        
         fenetre.blit(texte_rejouer, rect_rejouer) # Affiche les instructions pour rejouer ou quitter
     couleur_actuelle = "white" if ej.trait_aux_blancs else "black" # Détermine la couleur du joueur actuel
     if ej.est_en_echec(couleur_actuelle): # Affiche un message d'échec au roi du joueur actuel
         texte_echec = police_titre.render("Échec au roi " + couleur_actuelle, True, (255, 50, 50)) # Affiche le message d'échec en rouge vif
         rect_echec = texte_echec.get_rect(center=(LARGEUR//2, HAUTEUR//2)) # Affiche le rectangle du message d'échec
-        pygame.draw.rect(fenetre, (0, 0, 0), (rect_echec.x - 10, rect_echec.y - 10, rect_echec.width + 20, rect_echec.height + 20)) # Dessine un rectangle noir derrière le message d'échec pour le faire ressortir
+        pygame.draw.rect(fenetre, NOIR, (rect_echec.x - 10, rect_echec.y - 10, rect_echec.width + 20, rect_echec.height + 20)) # Dessine un rectangle noir derrière le message d'échec pour le faire ressortir
         fenetre.blit(texte_echec, rect_echec) # Affiche le message d'échec au roi du joueur actuel
     
     if message_bloque != "":
             temps_actuel = pygame.time.get_ticks()
             # On vérifie si les 1000 ms (1 secondes) sont écoulées
             if temps_actuel - debut_timer_bloque < 1000:
-                surface_texte = police_titre.render(message_bloque, True, (255, 255, 255))
+                surface_texte = police_titre.render(message_bloque, True, BLANC)
                 rect_texte = surface_texte.get_rect(center=(LARGEUR//2, HAUTEUR//2 - 15))
                 
                 # On dessine un fond pour le texte (optionnel mais plus lisible)
                 pygame.draw.rect(fenetre, (200, 0, 0), rect_texte.inflate(30, 30)) # Cadre rouge
-                pygame.draw.rect(fenetre, (0, 0, 0), rect_texte.inflate(20, 20))  # Fond noir
-                
+                pygame.draw.rect(fenetre, NOIR, rect_texte.inflate(20, 20))  # Fond noir
                 fenetre.blit(surface_texte, rect_texte)
             else:
                 # Le temps est écoulé, on réinitialise le message
                 message_bloque = ""
 
     pygame.display.flip() # Met à jour l'affichage de la fenêtre
-    
 pygame.quit() # Quitte pygame proprement
 sys.exit() # Quitte le programme proprement
